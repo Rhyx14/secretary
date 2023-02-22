@@ -9,7 +9,7 @@ def init_env(cuda_devices,ddp=False,openmpi_thread=None,random_seed=None):
     initilize enviroment (for cuda)
     '''
     if(openmpi_thread is not None):
-        os.environ['CUDA_VISIBLE_DEVICES']=openmpi_thread
+        os.environ['OMP_NUM_THREADS']=openmpi_thread
     if random_seed is not None:
         set_seed(random_seed)
     local_rank,world_size=init_cuda(cuda_devices,ddp)
