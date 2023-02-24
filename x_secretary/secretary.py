@@ -20,9 +20,6 @@ class Secretary():
 
         self.data_recorder=data_recorder()
 
-        # cuda设置型号
-        self._print_device()
-
     @solo_method
     def print_solo(self,str,end='\n'):
         print(str,end=end)
@@ -153,15 +150,6 @@ class Secretary():
             import torch.distributed as dist
             dist.barrier()
         os.system(f'shutdown -h {t}')
-
-    def _print_device(self,id=0):
-        '''
-        cuda设备型号 默认0号
-        '''
-        if(self.distributed):
-            self.logger.info(str(torch.cuda.get_device_properties(self.LOCAL_RANK)))
-        else:
-            self.logger.info(str(torch.cuda.get_device_properties(0)))
     
     @solo_method
     def timing(self):

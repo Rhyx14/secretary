@@ -1,9 +1,8 @@
 import os
 import torch
 import torch.distributed as distributed
-import random
-import numpy as np
-from .deprecated import deprecated 
+from ..deprecated import deprecated 
+from .set_seeds import set_seed
 def init_env(cuda_devices,ddp=False,openmpi_thread=None,random_seed=None):
     '''
     initilize enviroment (for cuda)
@@ -43,15 +42,4 @@ def init_cuda(cuda_devices,ddp=False):
     else:
         return 0,1
 
-def set_seed(seed,determinstic=False):
-    '''
-    set random seed of torch, numpy and random
-    '''
-    torch.manual_seed(seed)
-    random.seed(seed)  # random
-    np.random.seed(seed)  # numpy
-    torch.manual_seed(seed)  # torch+CPU
-    torch.cuda.manual_seed(seed)  # torch+GPU
-    if(determinstic):
-        torch.use_deterministic_algorithms(True)
 

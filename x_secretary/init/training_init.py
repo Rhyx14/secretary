@@ -1,28 +1,14 @@
 import datetime
 import os
 import shutil
-from .secretary_solo_method import solo_method
+from ..secretary_solo_method import solo_method
 import logging
 import torch.distributed as dist
-class init_base():
-    def __call__(self,secretary_object):
-        secretary_object.__dict__.update(self._updated)
-        pass
+import torch
 
-class Val_init(init_base):
-    def __init__(self,cfg,weight_folder) -> None:
-        self.cfg=cfg
-        self.logger=logging.getLogger(cfg.NAME)
-        logging.basicConfig(level=logging.INFO,format='%(asctime)s-[%(name)s] %(message)s')
-        self.WEIGHT_DIR=weight_folder
+from ..utils.info import get_sys_info
 
-        self._updated={
-            'cfg':self.cfg,
-            'logger':self.logger
-        }
-        self.logger.setLevel(logging.INFO)
-        pass
-
+from .init_base import init_base
 
 class Train_init(init_base):
     def __init__(self,cfg, distributed=False,base_folder=False,name_prefix='',logging_level=logging.INFO) -> None:
@@ -83,4 +69,8 @@ class Train_init(init_base):
         cfg_str=str(self.cfg)
         print(cfg_str)
         with open(os.path.join(self.SAVED_DIR,'configuration.txt'),'w') as f:
+
+            # 打印环境信息
+            f.write(get_sys_info())
             f.write(cfg_str)
+            
