@@ -16,6 +16,6 @@ def get_sys_info() -> str:
         f'CUDA devices:',
         *cuda_devices,
         f'CUDA_VISIBLE_DEVICES={os.environ.get("CUDA_VISIBLE_DEVICES","undefined")}',
-        '=================================================================================='
+        '==================================================================================\n'
     ]
     return '\n'.join(s)
