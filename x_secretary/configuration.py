@@ -7,8 +7,8 @@ class Configuration():
         self.__dict__.update(params)
         return self
     
-    def load_weight(self,net:torch.nn.Module,strict=False):
-        if(hasattr(self,'PRE_TRAIN')):
+    def load_weight(self,net:torch.nn.Module,strict=False,weight_key='PRE_TRAIN'):
+        if(hasattr(self,weight_key)):
             net.load_state_dict(torch.load(self.PRE_TRAIN,map_location='cpu'),strict=strict)
     
     def __str__(self) -> str:
