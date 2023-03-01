@@ -7,7 +7,7 @@ import shutil
 import os
 import json
 from collections import defaultdict
-
+from .utils.info import get_host_name
 from .secretary_solo_method import solo_method
 from .data_recorder import data_recorder
 class Secretary():
@@ -130,7 +130,7 @@ class Secretary():
         # python脚本示例
         import requests
         if(name is None):
-            name='name'
+            name=get_host_name()
         if content is None:
             content='no content'
         resp = requests.post("https://www.autodl.com/api/v1/wechat/message/push",

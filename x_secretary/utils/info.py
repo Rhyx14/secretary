@@ -19,3 +19,9 @@ def get_sys_info() -> str:
         '==================================================================================\n'
     ]
     return '\n'.join(s)
+
+def get_host_name() ->str:
+    '''
+    get host name, (computer name in Windows)
+    '''
+    return platform.node()
