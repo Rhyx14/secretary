@@ -13,7 +13,7 @@ __all__.extend([
 
 from .utils.ddp_sampler import DDP_BatchSampler
 from .utils.info import get_sys_info,get_host_name
-from .utils.init_env import init_cuda_ddp,init_cuda
+from .utils.init_env import init_cuda
 from .utils.set_seeds import set_seed
 
 __all__.extend([
