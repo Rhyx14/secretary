@@ -18,7 +18,6 @@ from .utils.set_seeds import set_seed
 
 __all__.extend([
     'DDP_BatchSampler',
-    'init_cuda_ddp',
     'init_cuda',
     'set_seed',
     'get_sys_info',
