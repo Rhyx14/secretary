@@ -3,6 +3,8 @@ import torch
 import torch.distributed as distributed
 from ..deprecated import deprecated 
 from .set_seeds import set_seed
+
+@deprecated('This function will be remove in future version, using init_cuda() instead.')
 def init_env(cuda_devices,ddp=False,openmpi_thread=None,random_seed=None):
     '''
     initilize enviroment (for cuda)
@@ -14,25 +16,17 @@ def init_env(cuda_devices,ddp=False,openmpi_thread=None,random_seed=None):
     local_rank,world_size=init_cuda(cuda_devices,ddp)
     return local_rank,world_size
 
-@deprecated('This function will be remove in future version, using init_cuda() or init_env() instead.')
-def init_cuda_ddp(cuda_devices):
+def init_cuda(cuda_devices,ddp=False,tf32=False):
     '''
-    setting cuda devices (for ddp)
-    '''
-    os.environ['CUDA_VISIBLE_DEVICES']=cuda_devices
-    distributed.init_process_group(backend='nccl')
-    LOCAL_RANK=distributed.get_rank()
-    WORLD_SIZE=distributed.get_world_size()
-    torch.cuda.set_device(LOCAL_RANK)
-    return LOCAL_RANK,WORLD_SIZE
-
-def init_cuda(cuda_devices,ddp=False):
-    '''
-    setting cuda devices
+    setting cuda devices and environment.
 
     @return : local rank, world size
     '''
     os.environ['CUDA_VISIBLE_DEVICES']=cuda_devices
+
+    if(tf32):
+        os.environ['NVIDIA_TF32_OVERRIDE']=0
+
     if(ddp):
         distributed.init_process_group(backend='nccl')
         LOCAL_RANK=distributed.get_rank()
