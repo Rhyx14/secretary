@@ -24,8 +24,8 @@ def init_cuda(cuda_devices,ddp=False,tf32=False):
     '''
     os.environ['CUDA_VISIBLE_DEVICES']=cuda_devices
 
-    if(tf32):
-        os.environ['NVIDIA_TF32_OVERRIDE']=0
+    if tf32 is not True:
+        os.environ['NVIDIA_TF32_OVERRIDE']='0'
 
     if(ddp):
         distributed.init_process_group(backend='nccl')
