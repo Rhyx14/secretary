@@ -16,6 +16,7 @@ def get_sys_info() -> str:
         f'CUDA devices:',
         *cuda_devices,
         f'CUDA_VISIBLE_DEVICES={os.environ.get("CUDA_VISIBLE_DEVICES","undefined")}',
+        f'NVIDIA_TF32_OVERRIDE={os.environ.get("NVIDIA_TF32_OVERRIDE","undefined")}',
         '==================================================================================\n'
     ]
     return '\n'.join(s)
