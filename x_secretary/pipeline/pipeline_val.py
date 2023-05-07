@@ -6,6 +6,10 @@ from ..utils.segment_metric import Metric
 class ImageSegmentation_Val_Pipeline(PipelineBase):
     '''
     val pipline for image classification
+
+    before_turn_hooks : hooks before each training turn, with parameter ()
+
+    after_turn_hooks : hooks after each training turn, with parameter (batch_id)
     '''
     def __init__(self,
         logger,
@@ -17,7 +21,9 @@ class ImageSegmentation_Val_Pipeline(PipelineBase):
         dl_workers=2,
         dl_prefetch_factor=10,
         before_hooks=None,
-        after_hooks=None):
+        after_hooks=None,
+        before_turn_hooks=None,
+        after_turn_hooks=None,):
         super().__init__(logger,net,before_hooks,after_hooks)
         
         self.batch_size=batch_size
@@ -26,6 +32,9 @@ class ImageSegmentation_Val_Pipeline(PipelineBase):
         self.dataset=dataset
         self.dl_workers=dl_workers
         self.dl_prefetch_factor=dl_prefetch_factor
+
+        self.before_turn_hooks=before_turn_hooks
+        self.after_turn_hooks=after_turn_hooks
 
     def Run(self,epoch=-1,*args,**kwargs):
 
@@ -36,12 +45,15 @@ class ImageSegmentation_Val_Pipeline(PipelineBase):
                inputs = datum['X'].cuda()
                gt=datum['l'].cpu().numpy()
 
+               # simulate snn
+               PipelineBase.call_hooks(self.before_turn_hooks)
                output = self.net(inputs)
                output = output.data.cpu().numpy()
 
                pred=output.argmax(axis=1)
                
                metric.add_batch(gt,pred)
+               PipelineBase.call_hooks(self.after_turn_hooks,iter)
                # N, _, h, w = output.shape
                # pred = output.transpose(0, 2, 3, 1).reshape(-1, N_CLASS).argmax(axis=1).reshape(N, h, w)
 

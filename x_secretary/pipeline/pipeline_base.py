@@ -33,9 +33,9 @@ class PipelineBase():
                     h(*args)
             else:
                 hooks(*args)
-
-    def _Check_Attribute(self,key:str,type:tuple):
-        if hasattr(self,key):
-            assert isinstance(self.key,type)
+    @staticmethod
+    def _Check_Attribute(obj,key:str,type:tuple):
+        if hasattr(obj,key):
+            assert isinstance(obj.__dict__[key],type)
         else:
             raise Exception(f'Missing "{key}" with type "{type}"')

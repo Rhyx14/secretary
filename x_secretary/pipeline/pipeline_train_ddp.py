@@ -57,13 +57,13 @@ class Image_DDP_training(PipelineBase):
         self.after_turn_hooks=after_turn_hooks
         self.before_turn_hooks=before_turn_hooks
 
-        self._Check_Attribute(self.cfg,'net',(torch.nn.parallel.distributed.DistributedDataParallel,))
-        self._Check_Attribute(self.cfg,'loss',(torch.nn.Module,))
-        self._Check_Attribute(self.cfg,'opt',(torch.optim.Optimizer,))
-        self._Check_Attribute(self.cfg,'train_dataset',(torch.utils.data.Dataset,))
-        self._Check_Attribute(self.cfg,'BATCH_SIZE',(int,))
-        self._Check_Attribute(self.cfg,'EPOCH',(int,))
-        self._Check_Attribute(self.cfg,'HALF',(bool,))
+        PipelineBase._Check_Attribute(self.cfg,'net',(torch.nn.parallel.distributed.DistributedDataParallel,))
+        PipelineBase._Check_Attribute(self.cfg,'loss',(torch.nn.Module,))
+        PipelineBase._Check_Attribute(self.cfg,'opt',(torch.optim.Optimizer,))
+        PipelineBase._Check_Attribute(self.cfg,'train_dataset',(torch.utils.data.Dataset,))
+        PipelineBase._Check_Attribute(self.cfg,'BATCH_SIZE',(int,))
+        PipelineBase._Check_Attribute(self.cfg,'EPOCH',(int,))
+        PipelineBase._Check_Attribute(self.cfg,'HALF',(bool,))
 
         if(mode=='classification'):
             self.Run=self._Run_cls
