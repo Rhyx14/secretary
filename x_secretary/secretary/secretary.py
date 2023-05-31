@@ -7,9 +7,9 @@ import shutil
 import os
 import json
 from collections import defaultdict
-from .utils.info import get_host_name
+from ..utils.info import get_host_name
 from .secretary_solo_method import solo_method
-from .data_recorder import data_recorder
+from ..data_recorder import data_recorder
 class Secretary():
 
     def __init__(self,init:callable) -> None:

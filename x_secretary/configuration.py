@@ -9,7 +9,9 @@ class Configuration():
     
     def load_weight(self,net:torch.nn.Module,strict=False,weight_key='PRE_TRAIN'):
         if(hasattr(self,weight_key)):
-            net.load_state_dict(torch.load(self.PRE_TRAIN,map_location='cpu'),strict=strict)
+            net.load_state_dict(torch.load(self.__dict__[weight_key],map_location='cpu'),strict=strict)
+        else:
+            print(f'no such weight file: {weight_key}')
     
     def __str__(self) -> str:
         ls=''
