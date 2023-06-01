@@ -2,19 +2,6 @@ import os
 import torch
 import torch.distributed as distributed
 from ..deprecated import deprecated 
-from .set_seeds import set_seed
-
-@deprecated('This function will be remove in future version, using init_cuda() instead.')
-def init_env(cuda_devices,ddp=False,openmpi_thread=None,random_seed=None):
-    '''
-    initilize enviroment (for cuda)
-    '''
-    if(openmpi_thread is not None):
-        os.environ['OMP_NUM_THREADS']=openmpi_thread
-    if random_seed is not None:
-        set_seed(random_seed)
-    local_rank,world_size=init_cuda(cuda_devices,ddp)
-    return local_rank,world_size
 
 def init_cuda(cuda_devices,ddp=False,tf32=False):
     '''

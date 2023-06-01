@@ -22,7 +22,7 @@ class Log_dir:
             self.world_size=dist.get_world_size()
         pass
 
-    def create_dir(self) -> Log_dir:
+    def create_dir(self):
         if(self.distributed):
             import torch.distributed as dist
             _saved_dir=str(self.root_path/self.name)
@@ -46,5 +46,4 @@ class Log_dir:
          
         name: prefix
         '''
-        name+datetime.datetime.now().strftime('_%m%d%H%M')
-        return 
+        return name+datetime.datetime.now().strftime('_%m%d%H%M')

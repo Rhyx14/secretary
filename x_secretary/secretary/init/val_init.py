@@ -1,7 +1,6 @@
 import datetime
 import os
 import shutil
-from ..secretary_solo_method import solo_method
 import logging
 import torch.distributed as dist
 import torch

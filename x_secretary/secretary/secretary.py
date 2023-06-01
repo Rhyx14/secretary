@@ -3,12 +3,12 @@
 '''
 import torch
 import datetime
-import shutil
 import os
 import json
 from collections import defaultdict
+import torch.distributed as dist
 from ..utils.info import get_host_name
-from .secretary_solo_method import solo_method
+from .solo_method import solo_method
 from ..data_recorder import data_recorder
 class Secretary():
 
@@ -110,20 +110,24 @@ class Secretary():
         '''
         dump to json file (solo)
         '''
-        with open(os.path.join(self.SAVED_DIR,filename),'w') as f:
+        with open(self.SAVED_DIR/filename,'w') as f:
             json.dump(obj,f)
 
+    def sync(self):
+        if(self.distributed):
+            dist.barrier()
+    
     def load_json(self,filename):
         '''
         load from json file (tutti)
         '''
-        return json.load(open(os.path.join(self.SAVED_DIR,filename),'r'))
+        return json.load(open(self.SAVED_DIR/filename,'r'))
 
     def exist(self,filename):
         '''
         check file existence (tutti)
         '''
-        return os.path.exists(os.path.join(self.SAVED_DIR,filename))
+        return os.path.exists(self.SAVED_DIR/filename)
 
     @solo_method
     def info_wechat_autodl(self,token,title,name=None,content=None):    

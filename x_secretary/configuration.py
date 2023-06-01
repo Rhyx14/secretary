@@ -2,6 +2,7 @@ import os
 import torch
 class Configuration():
     def __init__(self) -> None:
+        self.NAME='default'
         pass
     def update(self,params:dict):
         self.__dict__.update(params)
