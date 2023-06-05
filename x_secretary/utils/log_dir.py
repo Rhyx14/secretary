@@ -25,12 +25,12 @@ class Log_dir:
     def create_dir(self):
         if(self.distributed):
             import torch.distributed as dist
-            _saved_dir=str(self.root_path/self.name)
+            _saved_dir=self.root_path/self.name
 
             if(self.local_rank==0):
                 pathlib.Path.mkdir(_saved_dir,exist_ok=True)
 
-            ls=[_saved_dir]
+            ls=[str(_saved_dir)]
             dist.broadcast_object_list(ls,0)
             self.saved_dir=Path(ls[0]) 
 
