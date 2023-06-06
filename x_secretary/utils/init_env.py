@@ -10,7 +10,7 @@ def init_cuda(cuda_devices,ddp=False,tf32=False):
     @return : local rank, world size
     '''
     os.environ['CUDA_VISIBLE_DEVICES']=cuda_devices
-
+    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     if tf32 is not True:
         os.environ['NVIDIA_TF32_OVERRIDE']='0'
 
