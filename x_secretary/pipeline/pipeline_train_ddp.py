@@ -1,7 +1,7 @@
 import logging
 import torch
 from torch.utils.data.dataloader import DataLoader
-from utils.ddp_sampler import DDP_BatchSampler
+from ..utils.ddp_sampler import DDP_BatchSampler
 from .pipeline_base import PipelineBase
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.cuda.amp import autocast
