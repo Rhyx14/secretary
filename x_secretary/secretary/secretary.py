@@ -91,18 +91,41 @@ class Secretary():
         return tmp
 
     @solo_method
-    def save(self,net=None):
+    def save(self,net=None,best_mode=None,best_value=None):
         '''
         save network weight and recorded data (solo)
+
+        If best_mode == False, the literal value of the best_value doesn't make a difference.
+        otherwise, the best_mode is only enabled with a valid best_value.
         '''
         if net is not None:
             if isinstance(net,(torch.nn.parallel.DataParallel,torch.nn.parallel.distributed.DistributedDataParallel)):
                 _net=net.module
             else:
                 _net=net
+
             path=os.path.join(self.SAVED_DIR,'weight.pt')
-            torch.save(_net.state_dict(),path)
-            self.logger.info(f'saved at {path}')
+
+            if best_mode is not None and best_mode:
+
+                if best_value is None:
+                    self.logger.info(f'invaild best_value, pass')
+                else:
+                    if hasattr(self,'_best_value'):
+                        if best_value>self._best_value:
+                            self._best_value=best_value
+                            torch.save(_net.state_dict(),path)
+                            self.logger.info(f'saved at {path}')
+                        else:
+                            self.logger.info(f'not the best, pass')
+                    else: # the first time saving the best
+                        setattr(self,'_best_value',best_value)
+                        torch.save(_net.state_dict(),path)
+                        self.logger.info(f'saved at {path}')
+            else: 
+                torch.save(_net.state_dict(),path)
+                self.logger.info(f'saved at {path}')
+
         self.data_recorder.save(self.SAVED_DIR)
 
     @solo_method
