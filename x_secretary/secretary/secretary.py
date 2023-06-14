@@ -21,8 +21,8 @@ class Secretary():
         self.data_recorder=data_recorder()
 
     @solo_method
-    def print_solo(self,str,end='\n'):
-        print(str,end=end)
+    def print_solo(self,str,**kwargs):
+        print(str,**kwargs)
 
     def debug(self,msg):
         '''
@@ -31,11 +31,11 @@ class Secretary():
         self.logger.debug(msg)
 
     @solo_method
-    def solo(self,callable,*args):
+    def solo(self,callable,*args,**kwargs):
         '''
         run method (solo)
         '''
-        return callable(args)
+        return callable(*args,**kwargs)
     
     @solo_method
     def info(self,msg):
