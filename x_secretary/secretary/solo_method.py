@@ -5,3 +5,13 @@ def solo_method(func):
         else:
             return None
     return f
+
+def solo_method_with_default_return(ret_value):
+    def _solo(func):
+        def f(self,*args,**kwargs):
+            if(self.LOCAL_RANK==0):
+                return func(self,*args,**kwargs)
+            else:
+                return ret_value
+        return f
+    return _solo

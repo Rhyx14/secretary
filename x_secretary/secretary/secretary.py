@@ -63,12 +63,12 @@ class Secretary():
         '''
         self.data_recorder.record_serial_data(name,index,value)
     
-    @solo_method
+    # @solo_method
     def get_data(self,name):
         '''
-        get data (solo)
+        get data
         '''
-        return self.data_recorder.data[name]
+        return self.data_recorder.data.get(name,0)
 
     @solo_method
     def record_data(self,name,value):

@@ -1,6 +1,6 @@
 import torch
 import os
-
+from contextlib import contextmanager
 class PipelineBase():
     def __init__(self,logger,net,before_hooks,after_hooks) -> None:
         self.logger=logger
@@ -39,3 +39,10 @@ class PipelineBase():
             assert isinstance(obj.__dict__[key],type)
         else:
             raise Exception(f'Missing "{key}" with type "{type}"')
+        
+    @staticmethod
+    @contextmanager
+    def switch_eval_train(net):
+        net.eval()
+        yield
+        net.train()
