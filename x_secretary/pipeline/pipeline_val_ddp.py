@@ -44,6 +44,7 @@ class Image_Val_Pipeline_ddp(PipelineBase):
 
                 # x=x.to(self._accelerator.device,non_blocking=True)
                 # label=label.to(self._accelerator.device,non_blocking=True)
+                PipelineBase.call_hooks(self.before_turn_hooks)
 
                 # simulate snn
                 if(mix_precision):
@@ -51,8 +52,6 @@ class Image_Val_Pipeline_ddp(PipelineBase):
                         _out=self.net(x)
                 else:
                     _out=self.net(x)  
-
-                PipelineBase.call_hooks(self.before_turn_hooks)
 
                 if loss is not None:
                     _loss = (_loss*_bid + loss(_out,label).item())/(_bid+1)
