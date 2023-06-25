@@ -8,7 +8,7 @@ long_description = None
 setup(
       name='x_secretary', # 包名称
       packages=find_packages(exclude=['__pycache__']), # 需要处理的包目录
-      version='0.1.1', # 版本
+      version='0.1.2', # 版本
       classifiers=[
           'Development Status :: 3 - Alpha',
           'License :: OSI Approved :: MIT License',
@@ -25,6 +25,6 @@ setup(
     #   long_description_content_type='text/markdown', # 长介绍使用的类型
       url='https://github.com/Rhyx14/secretary', # 包主页，一般是github项目主页
       license='MIT', # 协议
-      python_requires='>=3.8'
+      python_requires='>=3.10'
     #   keywords='pimm source manager'  # 关键字 搜索用
     )

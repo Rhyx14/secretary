@@ -1,9 +1,13 @@
 import os
 import torch
+import argparse
+from typing import Union
 class Configuration():
     def __init__(self) -> None:
         self.NAME='default'
+        self.parser=argparse.ArgumentParser()
         pass
+
     def update(self,params:dict):
         self.__dict__.update(params)
         return self
@@ -24,3 +28,20 @@ class Configuration():
             else:
                 ls += "%s\t%s\n" % (k,v)
         return ls
+    
+    def add_args(self,args:Union[list,tuple]):
+        '''
+        arg_list: (name,type,help_info) 
+                or [(name1,type,help_info),(name2,type,help_info),]
+        '''
+        if isinstance(args,list):
+            for name,type,help in args:
+                self.parser.add_argument(name,help=help,type=type)
+        else:
+            self.parser.add_argument(args[0],help=args[1],type=args[2])
+
+        _dist=self.parser.parse_args()
+        # print(_dist.__dict__)
+        self.update(_dist.__dict__)
+        print(self.__dict__)
+        return self
