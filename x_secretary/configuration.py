@@ -41,7 +41,5 @@ class Configuration():
             self.parser.add_argument(args[0],help=args[1],type=args[2])
 
         _dist=self.parser.parse_args()
-        # print(_dist.__dict__)
         self.update(_dist.__dict__)
-        print(self.__dict__)
         return self
