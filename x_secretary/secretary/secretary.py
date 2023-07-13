@@ -91,7 +91,7 @@ class Secretary():
         return tmp
 
     @solo_method
-    def save(self,net=None,best_mode=None,best_value=None):
+    def save(self,net=None,best_mode=False,best_value=None):
         '''
         save network weight and recorded data (solo)
 
@@ -106,7 +106,7 @@ class Secretary():
 
             path=os.path.join(self.SAVED_DIR,'weight.pt')
 
-            if best_mode is not None and best_mode:
+            if best_mode:
 
                 if best_value is None:
                     self.logger.info(f'invaild best_value, pass')
