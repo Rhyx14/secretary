@@ -4,18 +4,16 @@ from torch.utils.data.dataloader import DataLoader
 from torch.cuda.amp import autocast
 class Image_Val_Pipeline_ddp(PipelineBase):
     def __init__(self, 
-            secretary,
+            logger,
             batch_size,
             net,
             dataset,
             dl_workers=4,
             dl_prefetch_factor=4,
-            before_hooks=None,
-            after_hooks=None,
             before_turn_hooks=None,
             after_turn_hooks=None,
         ) -> None:
-        super().__init__(secretary.logger, net, before_hooks, after_hooks)
+        super().__init__(logger, net, None, None)
         self.batch_size=batch_size
         self.dataset=dataset
         self.dl_workers=dl_workers

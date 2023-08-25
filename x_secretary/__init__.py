@@ -2,13 +2,14 @@ __all__=[
 ]
 
 from .secretary.secretary import Secretary
-from .secretary.init.training_init import Train_init
+from .secretary.init.training_init import Train_init,Train_init2
 from .secretary.init.val_init import Val_init
 
 __all__.extend([
     'Secretary',
     'Val_init',
     'Train_init',
+    'Train_init2'
 ])
 
 from .utils.ddp_sampler import DDP_BatchSampler

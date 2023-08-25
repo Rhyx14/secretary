@@ -19,6 +19,7 @@ class Secretary():
         self.time_stamps=None
 
         self.data_recorder=data_recorder()
+        self.stages_list=[]
 
     @solo_method
     def print_solo(self,str,**kwargs):
@@ -91,7 +92,7 @@ class Secretary():
         return tmp
 
     @solo_method
-    def save(self,net=None,best_mode=False,best_value=None):
+    def save(self,net=None,best_mode=False,best_value=None,file_name='weight.pt'):
         '''
         save network weight and recorded data (solo)
 
@@ -104,7 +105,7 @@ class Secretary():
             else:
                 _net=net
 
-            path=os.path.join(self.SAVED_DIR,'weight.pt')
+            path=os.path.join(self.SAVED_DIR,file_name)
 
             if best_mode:
 
@@ -190,3 +191,27 @@ class Secretary():
             span=now-self.time_stamps
             self.logger.info(f'span === {str(span)}')
             self.time_stamps=now
+
+    def register_stage(self,priority,pre_acts=[],post_acts=[]):
+        '''
+        添加执行阶段,根据prioirity顺序(由小到大)执行。
+        after_actions: 该阶段完成后执行的动作
+        '''
+        def outter(f,*args,**kwargs):
+            self.stages_list.append([
+                priority,
+                [*pre_acts,f,*post_acts]
+            ])
+            def inner():
+                f(*args,**kwargs)
+            return inner
+        return outter
+    
+    def run_stages(self):
+        '''
+        执行已注册的训练阶段
+        '''
+        self.stages_list.sort(key=lambda x: x[0])
+        for _,stages in self.stages_list:
+            for func in stages:
+                func()
