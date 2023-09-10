@@ -9,8 +9,6 @@ class Image_training(PipelineBase):
     def __init__(self,
         logger,
         cfg,
-        before_hooks=None,
-        after_hooks=None,
         before_epoch_hooks=None,
         after_epoch_hooks=None,
         before_turn_hooks=None,
@@ -53,7 +51,6 @@ class Image_training(PipelineBase):
         self.before_turn_hooks=before_turn_hooks
         self.after_turn_hooks=after_turn_hooks
 
-        PipelineBase._Check_Attribute(self.cfg,'net',(torch.nn.parallel.distributed.DistributedDataParallel,))
         PipelineBase._Check_Attribute(self.cfg,'loss',(torch.nn.Module,))
         PipelineBase._Check_Attribute(self.cfg,'opt',(torch.optim.Optimizer,))
         PipelineBase._Check_Attribute(self.cfg,'train_dataset',(torch.utils.data.Dataset,))
@@ -68,7 +65,7 @@ class Image_training(PipelineBase):
         else:
             raise NotImplementedError(f'Pipleline for {mode} hasn''t been implemented yet.')
         
-        super().__init__(self.logger,cfg.net,before_hooks,after_hooks)
+        super().__init__(self.logger,cfg.net,None,None)
     
         
     def _Run_seg(self,dl_workers=2,*args,**kwargs):

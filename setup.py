@@ -17,6 +17,7 @@ setup(
           'Programming Language :: Python :: 3.10',
       ],
       install_requires=['torch'],
+      extras_requires=['opencv-python'],
     #   entry_points={'console_scripts': ['pmm=pimm.pimm_module:main']},
     #   package_data={'': ['*.json']},
       author='rhyx14', # 作者

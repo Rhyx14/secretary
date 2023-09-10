@@ -1,7 +1,7 @@
 import torch
 from .pipeline_base import PipelineBase
 from torch.utils.data.dataloader import DataLoader
-from ..utils.segment_metric import Metric
+from ..utils.semantic_segmentation.metric import Metric
 
 class ImageSegmentation_Val_Pipeline(PipelineBase):
     '''
@@ -19,12 +19,10 @@ class ImageSegmentation_Val_Pipeline(PipelineBase):
         dataset,
         cuda_device:list=None,
         dl_workers=2,
-        dl_prefetch_factor=10,
-        before_hooks=None,
-        after_hooks=None,
+        dl_prefetch_factor=2,
         before_turn_hooks=None,
         after_turn_hooks=None,):
-        super().__init__(logger,net,before_hooks,after_hooks)
+        super().__init__(logger,net,None,None)
         
         self.batch_size=batch_size
         self.cuda_device=cuda_device
@@ -67,7 +65,10 @@ class ImageSegmentation_Val_Pipeline(PipelineBase):
             # ious = np.nanmean(total_ious, axis=1)
             # pixel_accs = np.array(pixel_accs).mean()
             # logger.info("epoch{}, pix_acc: {}, meanIoU: {}".format(epoch, pixel_accs, np.nanmean(ious)))
-            self.logger.info("epoch: {}, pix_acc: {}, meanIoU: {}".format(epoch, metric.Pixel_Accuracy(),metric.Mean_Intersection_over_Union()))
+            _acc=metric.Pixel_Accuracy()
+            _miou=metric.Mean_Intersection_over_Union()
+
+            return _acc,_miou
 
 class Image_Val_Pipeline(PipelineBase):
     '''

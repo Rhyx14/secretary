@@ -84,7 +84,7 @@ class Image_DDP_training(PipelineBase):
         scaler=GradScaler()
 
         for ep in range(cfg.EPOCH):
-            
+
             PipelineBase.call_hooks(self.before_epoch_hooks,self.cfg)
             for _b_id,datum in enumerate(dl):
 
@@ -119,8 +119,8 @@ class Image_DDP_training(PipelineBase):
                 cfg.lr_scheduler.step()
 
             PipelineBase.call_hooks(self.after_epoch_hooks,self.cfg,_loss.item(),ep)
-            distributed.barrier()
 
+            # distributed.barrier()
         return
 
     def _Run_cls(self,accumlate=1,dl_workers=2,*args,**kwargs):
