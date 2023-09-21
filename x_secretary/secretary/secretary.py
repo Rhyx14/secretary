@@ -8,7 +8,7 @@ import json
 from collections import defaultdict
 import torch.distributed as dist
 from ..utils.info import get_host_name
-from .solo_method import solo_method
+from .solo_method import solo_method,solo_method_with_default_return,solo_chaining_method
 from ..data_recorder import data_recorder
 class Secretary():
 
@@ -21,9 +21,13 @@ class Secretary():
         self.data_recorder=data_recorder()
         self.stages_list=[]
 
-    @solo_method
+    @solo_chaining_method
     def print_solo(self,str,**kwargs):
+        '''
+        print function wrapper (solo) -> self 
+        '''
         print(str,**kwargs)
+        return self
 
     def debug(self,msg):
         '''
@@ -38,18 +42,20 @@ class Secretary():
         '''
         return callable(*args,**kwargs)
     
-    @solo_method
+    @solo_chaining_method
     def info(self,msg):
         '''
-        log information (solo)
+        log information (solo) -> self
         '''
         self.logger.info(msg)
+        return self
 
     def info_all(self,msg):
         '''
-        log information (tutti)
+        log information (tutti) -> self
         '''
         self.logger.info(msg)
+        return self
     
     @solo_method
     def record_serial_data(self,name,index,value):
@@ -64,7 +70,6 @@ class Secretary():
         '''
         self.data_recorder.record_serial_data(name,index,value)
     
-    # @solo_method
     def get_data(self,name):
         '''
         get data
@@ -91,10 +96,10 @@ class Secretary():
         self.data_recorder.record_data(name,tmp)
         return tmp
 
-    @solo_method
+    @solo_chaining_method
     def save(self,net=None,best_mode=False,best_value=None,file_name='weight.pt'):
         '''
-        save network weight and recorded data (solo)
+        save network weight and recorded data (solo) -> self
 
         If best_mode == False, the literal value of the best_value doesn't make a difference.
         otherwise, the best_mode is only enabled with a valid best_value.
@@ -128,14 +133,16 @@ class Secretary():
                 self.logger.info(f'saved at {path}')
 
         self.data_recorder.save(self.SAVED_DIR)
+        return self
 
-    @solo_method
+    @solo_chaining_method
     def dump_json(self,filename,obj):
         '''
         dump to json file (solo)
         '''
         with open(self.SAVED_DIR/filename,'w') as f:
             json.dump(obj,f)
+        return self
 
     def sync(self):
         if(self.distributed):
@@ -174,15 +181,16 @@ class Secretary():
         '''
         定时关机, 默认1min (solo)
         '''
+        raise NotImplementedError
         if(self.distributed):
             import torch.distributed as dist
             dist.barrier()
         os.system(f'shutdown -h {t}')
     
-    @solo_method
+    @solo_chaining_method
     def timing(self):
         '''
-        计算时间间隔 (solo)
+        计算时间间隔 (solo) -> self
         '''
         if self.time_stamps is None:
             self.time_stamps=datetime.datetime.now()
@@ -191,6 +199,7 @@ class Secretary():
             span=now-self.time_stamps
             self.logger.info(f'span === {str(span)}')
             self.time_stamps=now
+        return self
 
     def register_stage(self,priority,pre_acts=[],post_acts=[]):
         '''

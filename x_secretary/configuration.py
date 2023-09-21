@@ -60,16 +60,30 @@ class Configuration():
                 ls += "%s\t%s\n" % (_name,v)
         return ls
     
+    def get_records_str_and_reset(self):
+        '''
+        stringify the changed properties and reset
+        '''
+        ls=self.get_records_str()
+        self.reset_records()
+        return ls
+    
     def add_args(self,args:Union[list,tuple]):
         '''
-        arg_list: (name,type,help_info) 
-                or [(name1,type,help_info),(name2,type,help_info),]
+        args: (name,type,help_info) or (name,type,default,info) 
+                or list of the above tuple.
         '''
         if isinstance(args,list):
-            for name,type,help in args:
-                self._parser.add_argument(name,help=help,type=type)
+            for _tuple in args:
+                if len(_tuple)==3:
+                    self._parser.add_argument(_tuple[0],help=_tuple[2],type=_tuple[1])
+                if len(_tuple)==4:
+                    self._parser.add_argument(_tuple[0],help=_tuple[3],type=_tuple[1],default=_tuple[2])
         else:
-            self._parser.add_argument(args[0],help=args[1],type=args[2])
+            if len(args)==3:
+                self._parser.add_argument(args[0],help=args[2],type=args[1])
+            if len(args)==4:
+                self._parser.add_argument(args[0],help=args[3],type=args[1],default=args[2])
 
         _dist=self._parser.parse_args()
         self.update(_dist.__dict__)
