@@ -123,7 +123,7 @@ class Secretary():
                             torch.save(_net.state_dict(),path)
                             self.logger.info(f'saved at {path}')
                         else:
-                            self.logger.info(f'not the best, pass')
+                            self.logger.info(f'not the best ({self._best_value}), pass')
                     else: # the first time saving the best
                         setattr(self,'_best_value',best_value)
                         torch.save(_net.state_dict(),path)

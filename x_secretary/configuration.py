@@ -22,6 +22,7 @@ class Configuration():
             net.load_state_dict(torch.load(self.__dict__[weight_key],map_location='cpu'),strict=strict)
         else:
             print(f'no such weight file: {weight_key}')
+        return self
     
     def __str__(self) -> str:
         ls=''
