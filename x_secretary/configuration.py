@@ -17,11 +17,38 @@ class Configuration():
             self.__setattr__(k,v)
         return self
     
-    def load_weight(self,net:torch.nn.Module,strict=False,weight_key='PRE_TRAIN'):
-        if(hasattr(self,weight_key)):
-            net.load_state_dict(torch.load(self.__dict__[weight_key],map_location='cpu'),strict=strict)
+    def update_rt(self,name,value):
+        '''
+        update the configuration object but immediately return
+        '''
+        self.__setattr__(name,value)
+        return value
+    
+    def load_weight(self,net:torch.nn.Module,strict=False,weight_key='PRE_TRAIN',path=None,include=None,exclude=None):
+        _weight:dict=None
+        if path is not None:
+            _weight=torch.load(path,map_location='cpu')
         else:
-            print(f'no such weight file: {weight_key}')
+            _weight=torch.load(self.__dict__[weight_key],map_location='cpu')
+        
+        if _weight is not None:
+            if include !=None and exclude !=None:
+                raise ValueError('param "include" and "exclude" are exclusive')  
+
+            if include is not None:
+                _tmp={}
+                for _key,_value in _weight.items():
+                    if _key in include:
+                        _tmp[_key]=_value
+                _weight=_tmp
+                
+            if exclude is not None:
+                for _key in exclude: del _weight[_key]
+            pass
+            net.load_state_dict(_weight,strict=strict)
+
+        else:
+            print(f'No desginated path, and such weight file: {weight_key}')
         return self
     
     def __str__(self) -> str:
@@ -71,6 +98,8 @@ class Configuration():
     
     def add_args(self,args:Union[list,tuple]):
         '''
+        adding arguments in the CMD
+
         args: (name,type,help_info) or (name,type,default,info) 
                 or list of the above tuple.
         '''
