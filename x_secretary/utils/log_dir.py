@@ -1,5 +1,6 @@
 from pathlib import Path
 import pathlib
+import shutil
 import datetime
 class Log_dir:
     '''
@@ -47,12 +48,15 @@ class Log_dir:
             import torch.distributed as dist
             _new_name='./asdf'
             if (self.local_rank==0):
-                _new_name=self.saved_dir.rename(self.root_path/name)
+                _new_name=self.root_path / name
+                shutil.move(self.saved_dir,_new_name)
+
             ls=[str(_new_name)]
             dist.broadcast_object_list(ls,0)
             _new_name=Path(ls[0])
         else:
-            _new_name=self.saved_dir.rename(self.root_path/name)
+            _new_name=self.root_path / name
+            shutil.move(self.saved_dir,_new_name)
     
         self.name=name
         self.saved_dir=_new_name

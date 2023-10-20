@@ -8,9 +8,11 @@ import os
 import json
 from collections import defaultdict
 import torch.distributed as dist
-from ..utils.info import get_host_name
-from .solo_method import solo_method,solo_method_with_default_return,solo_chaining_method
-from ..data_recorder import data_recorder
+from ...utils.sys_info import get_host_name
+from ..solo_method import solo_method,solo_method_with_default_return,solo_chaining_method
+from ...data_recorder import data_recorder
+
+print('Secretary is obselete, please refer to namespace secretary.secretary_instance')
 class Secretary():
 
     def __init__(self,init:callable) -> None:
@@ -191,18 +193,7 @@ class Secretary():
                          "name": name,
                          "content": content
                      })
-    
-    @solo_method
-    def shut_down(self,t=1):
-        '''
-        定时关机, 默认1min (solo)
-        '''
-        raise NotImplementedError
-        if(self.distributed):
-            import torch.distributed as dist
-            dist.barrier()
-        os.system(f'shutdown -h {t}')
-    
+
     @solo_chaining_method
     def timing(self):
         '''

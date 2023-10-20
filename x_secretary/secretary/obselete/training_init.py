@@ -1,7 +1,7 @@
 from ..solo_method import solo_method
 import logging
 import torch.distributed as dist
-from ...utils.info import get_sys_info
+from ...utils.sys_info import get_sys_info
 from .init_base import init_base
 from ...utils.log_dir import Log_dir
 
