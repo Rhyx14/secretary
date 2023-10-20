@@ -2,7 +2,8 @@ __all__=[
 ]
 
 from .secretary.secretary import Secretary
-from .secretary.init.training_init import Train_init,Train_init2
+from .secretary.init.training_init import Train_init
+from .secretary.init.training_init2 import Train_init2
 from .secretary.init.val_init import Val_init
 
 __all__.extend([

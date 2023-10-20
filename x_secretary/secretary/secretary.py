@@ -1,6 +1,7 @@
 '''
 负责程序输出与输入（控制台，权重文件，日志文件）
 '''
+import logging
 import torch
 import datetime
 import os
@@ -14,8 +15,10 @@ class Secretary():
 
     def __init__(self,init:callable) -> None:
         
+        # default objects
+        self.logger=logging.getLogger("secretary")
+        
         init(self)
-        self.avg_loss=0
         self.time_stamps=None
 
         self.data_recorder=data_recorder()
@@ -57,6 +60,19 @@ class Secretary():
         self.logger.info(msg)
         return self
     
+    @solo_method
+    def log_to_cfg(self,*args,**kwds):
+        '''
+        log information to the configuration file (solo, may be replaced during init).
+        '''
+        return
+
+    def set_name_prefix(self,name,*args,**kwds):
+        '''
+        reset the name prefix (may be replaced during init).
+        '''
+        return self
+
     @solo_method
     def record_serial_data(self,name,index,value):
         '''
@@ -201,7 +217,7 @@ class Secretary():
             self.time_stamps=now
         return self
 
-    def register_stage(self,priority,pre_acts=[],post_acts=[]):
+    def register_stage(self,priority,pre_acts=[],post_acts=[],name='default'):
         '''
         添加执行阶段,根据prioirity顺序(由小到大)执行。
         after_actions: 该阶段完成后执行的动作
@@ -209,6 +225,7 @@ class Secretary():
         def outter(f,*args,**kwargs):
             self.stages_list.append([
                 priority,
+                name,
                 [*pre_acts,f,*post_acts]
             ])
             def inner():
@@ -221,6 +238,6 @@ class Secretary():
         执行已注册的训练阶段
         '''
         self.stages_list.sort(key=lambda x: x[0])
-        for _,stages in self.stages_list:
+        for _,_,stages in self.stages_list:
             for func in stages:
                 func()

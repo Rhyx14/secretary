@@ -38,6 +38,25 @@ class Log_dir:
             self.saved_dir=self.root_path/self.name
             pathlib.Path.mkdir(self.saved_dir,exist_ok=True)
         return self
+    
+    def change_name(self,name):
+        '''
+        change the name of the directory
+        '''
+        if self.distributed:
+            import torch.distributed as dist
+            _new_name='./asdf'
+            if (self.local_rank==0):
+                _new_name=self.saved_dir.rename(self.root_path/name)
+            ls=[str(_new_name)]
+            dist.broadcast_object_list(ls,0)
+            _new_name=Path(ls[0])
+        else:
+            _new_name=self.saved_dir.rename(self.root_path/name)
+    
+        self.name=name
+        self.saved_dir=_new_name
+
 
     @staticmethod
     def time_suffix_name(name)->str:
