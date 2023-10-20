@@ -2,6 +2,7 @@ import os
 import torch
 import argparse
 from typing import Any, Union
+import re
 class Configuration():
     def __init__(self,auto_record=False) -> None:
         self._auto_record=auto_record
@@ -34,17 +35,24 @@ class Configuration():
         if _weight is not None:
             if include !=None and exclude !=None:
                 raise ValueError('param "include" and "exclude" are exclusive')  
+            if include !=None or exclude !=None:
+                if strict==True : raise ValueError('"strict = True" is not compatible with "include" or "exclude".')  
 
             if include is not None:
                 _tmp={}
                 for _key,_value in _weight.items():
-                    if _key in include:
-                        _tmp[_key]=_value
+                    for _in_pattern in include:
+                        if re.match(_in_pattern,_key) is not None:
+                            _tmp[_key]=_value
                 _weight=_tmp
                 
             if exclude is not None:
-                for _key in exclude: del _weight[_key]
-            pass
+                for _ex_pattern in exclude:
+                    _keys=list(_weight.keys())
+                    for _key in _keys:
+                        if re.match(_ex_pattern,_key) is not None:
+                            del _weight[_key]
+            
             net.load_state_dict(_weight,strict=strict)
 
         else:
