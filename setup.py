@@ -8,13 +8,13 @@ long_description = None
 setup(
       name='x_secretary', # 包名称
       packages=find_packages(exclude=['__pycache__']), # 需要处理的包目录
-      version='0.1.4', # 版本
+      version='0.1.5', # 版本
       classifiers=[
           'Development Status :: 3 - Alpha',
           'License :: OSI Approved :: MIT License',
           'Programming Language :: Python', 'Intended Audience :: Developers',
         #   'Operating System :: OS Independent',
-          'Programming Language :: Python :: 3.10',
+          'Programming Language :: Python :: 3.11',
       ],
       install_requires=['torch'],
       extras_requires=['opencv-python'],

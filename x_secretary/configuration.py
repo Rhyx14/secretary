@@ -104,24 +104,31 @@ class Configuration():
         self.reset_records()
         return ls
     
+    def _process_args(self,_tuple):
+        match len(_tuple):
+            case 3: self._parser.add_argument(_tuple[0],help=_tuple[2],type=_tuple[1])
+            case 4: self._parser.add_argument(_tuple[0],help=_tuple[3],type=_tuple[1],default=_tuple[2])
+            case 5: self._parser.add_argument(_tuple[0],_tuple[1],help=_tuple[4],type=_tuple[2],default=_tuple[3])
+            case _: raise ValueError(f'Invalid length of tuple: {len(_tuple)}, which should be 3,4 or 5')
+
     def add_args(self,args:Union[list,tuple]):
         '''
         adding arguments in the CMD
 
-        args: (name,type,help_info) or (name,type,default,info) 
-                or list of the above tuple.
+        args: 
+            (name,type,help_info) 
+
+            or (name,type,default,info) 
+
+            or (short_name,name,type,default,info)
+            
+            or list of the above tuple.
         '''
         if isinstance(args,list):
             for _tuple in args:
-                if len(_tuple)==3:
-                    self._parser.add_argument(_tuple[0],help=_tuple[2],type=_tuple[1])
-                if len(_tuple)==4:
-                    self._parser.add_argument(_tuple[0],help=_tuple[3],type=_tuple[1],default=_tuple[2])
+                self._process_args(_tuple)
         else:
-            if len(args)==3:
-                self._parser.add_argument(args[0],help=args[2],type=args[1])
-            if len(args)==4:
-                self._parser.add_argument(args[0],help=args[3],type=args[1],default=args[2])
+            self._process_args(args)
 
         _dist=self._parser.parse_args()
         self.update(_dist.__dict__)
