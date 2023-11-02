@@ -15,6 +15,8 @@ from .utils.time import get_str_time
 from .utils.log_dir import Log_dir
 from .utils.opencv_loader import OpenCV_Loader
 from .utils.count_parameters import count_parameters
+from .utils.autodl import info_wechat_autodl
+from .utils.faster_save_on_cpu import offload_module,restore_offload
 
 __all__.extend([
     'DDP_BatchSampler',
@@ -25,7 +27,9 @@ __all__.extend([
     'get_str_time',
     'Log_dir',
     'OpenCV_Loader',
-    'count_parameters'
+    'count_parameters',
+    'info_wechat_autodl',
+    'offload_module','restore_offload'
 ])
 
 from .configuration import Configuration

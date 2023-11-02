@@ -7,7 +7,7 @@ import datetime
 import os
 import json
 import torch.distributed as dist
-from ..utils.sys_info import get_host_name
+from ..utils.autodl import info_wechat_autodl
 from .solo_method import solo_method,solo_method_with_default_return,solo_chaining_method
 from ..data_recorder import data_recorder
 class Secretary_base():
@@ -139,19 +139,7 @@ class Secretary_base():
 
     @solo_method
     def info_wechat_autodl(self,token,title,name=None,content=None):    
-        # python脚本示例
-        import requests
-        if(name is None):
-            name=get_host_name()
-        if content is None:
-            content='no content'
-        resp = requests.post("https://www.autodl.com/api/v1/wechat/message/push",
-                     json={
-                         "token": token,
-                         "title": title,
-                         "name": name,
-                         "content": content
-                     })
+        info_wechat_autodl(token,title,name,content)
 
     @solo_chaining_method
     def timing(self):

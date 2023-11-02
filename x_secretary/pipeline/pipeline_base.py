@@ -5,7 +5,7 @@ class PipelineBase():
     def __init__(self,logger,net,before_hooks,after_hooks) -> None:
         self.logger=logger
         self.net=net
-        assert isinstance(self.net,torch.nn.Module)
+        # assert isinstance(self.net,torch.nn.Module)
         self.before_hooks=before_hooks
         self.after_hooks=after_hooks
         pass
