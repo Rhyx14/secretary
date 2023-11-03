@@ -6,7 +6,7 @@ from ...utils.sys_info import get_sys_info
 from ...utils.log_dir import Log_dir
 import torch
 from pathlib import Path
-
+from ...utils.faster_save_on_cpu import offload_module,restore_offload
 class Training_Secretary(Secretary_base):
     def __init__(self,distributed=False,saved_dir='.',name_prefix='Train_Secretary',logging_level=logging.INFO) -> None:
         super().__init__(Path(saved_dir),distributed)
@@ -107,3 +107,10 @@ class Training_Secretary(Secretary_base):
 
         self.data_recorder.save(self.SAVED_DIR)
         return self
+
+    def offload_module(self,flag, module_type, net, ratio=0):
+        '''
+        Offload the interim tensor to cpu for reducing VRAM cost 
+        '''
+        if flag:
+            offload_module(module_type,net,ratio)

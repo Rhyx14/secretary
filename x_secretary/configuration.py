@@ -106,6 +106,7 @@ class Configuration():
     
     def _process_args(self,_tuple):
         match len(_tuple):
+            case 2: self._parser.add_argument(_tuple[0],action='store_true',help=_tuple[1])
             case 3: self._parser.add_argument(_tuple[0],help=_tuple[2],type=_tuple[1])
             case 4: self._parser.add_argument(_tuple[0],help=_tuple[3],type=_tuple[1],default=_tuple[2])
             case 5: self._parser.add_argument(_tuple[0],_tuple[1],help=_tuple[4],type=_tuple[2],default=_tuple[3])
@@ -121,6 +122,8 @@ class Configuration():
             or (name,type,default,info) 
 
             or (short_name,name,type,default,info)
+            
+            or (flags,help_info)
             
             or list of the above tuple.
         '''
