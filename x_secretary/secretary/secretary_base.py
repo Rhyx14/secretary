@@ -7,6 +7,7 @@ import datetime
 import os
 import json
 import torch.distributed as dist
+import torch
 from ..utils.autodl import info_wechat_autodl
 from .solo_method import solo_method,solo_method_with_default_return,solo_chaining_method
 from ..data_recorder import data_recorder
@@ -140,6 +141,16 @@ class Secretary_base():
     @solo_method
     def info_wechat_autodl(self,token,title,name=None,content=None):    
         info_wechat_autodl(token,title,name,content)
+
+    def cuda_VRAM_usage(self,mode='MB'):
+        _divider={
+            'KB':1024,
+            'MB':1024*1024,
+            'GB':1024*1024*1024,
+            'TB':1024*1024*1024*1024
+        }
+        self.info_all(f'max cuda memory:{torch.cuda.max_memory_allocated()/_divider[mode]:.3f}{mode}')
+        return self
 
     @solo_chaining_method
     def timing(self):

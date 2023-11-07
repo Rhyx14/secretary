@@ -42,7 +42,7 @@ class Log_dir:
     
     def change_name(self,name):
         '''
-        change the name of the directory
+        change the name of the directory (solo)
         '''
         if self.distributed:
             import torch.distributed as dist
