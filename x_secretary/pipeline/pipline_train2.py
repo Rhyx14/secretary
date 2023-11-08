@@ -106,12 +106,12 @@ class Image_training2(PipelineBase2):
 
         for ep in range(CFG.EPOCH):
             
-            PipelineBase.call_hooks(self.before_epoch_hooks,self.cfg)
+            PipelineBase2.call_hooks(self.before_epoch_hooks,self.cfg)
             for _b_id,datum in enumerate(self._dl):
 
                 x,y=self._unpack(datum)
 
-                PipelineBase.call_hooks(self.before_turn_hooks,self.cfg)
+                PipelineBase2.call_hooks(self.before_turn_hooks,self.cfg)
 
                 if(mix_precision):
                     with autocast():
@@ -124,10 +124,10 @@ class Image_training2(PipelineBase2):
                     _loss.backward()
 
                 CFG.opt.zero_grad(set_to_none=True)                   
-                PipelineBase.call_hooks(self.after_turn_hooks,self.cfg,_b_id,_loss.item(),ep)
+                PipelineBase2.call_hooks(self.after_turn_hooks,self.cfg,_b_id,_loss.item(),ep)
 
             if hasattr(CFG,'lr_scheduler'):
                 CFG.lr_scheduler.step()
 
-            PipelineBase.call_hooks(self.after_epoch_hooks,self.cfg,_loss.item(),ep)
+            PipelineBase2.call_hooks(self.after_epoch_hooks,self.cfg,_loss.item(),ep)
         return
