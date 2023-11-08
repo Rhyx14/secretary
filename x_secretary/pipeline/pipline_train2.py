@@ -2,10 +2,10 @@ from enum import Enum
 import torch
 from torch.utils.data.dataloader import DataLoader
 from ..utils.ddp_sampler import DDP_BatchSampler
-from .pipeline_base import PipelineBase
+from .pipeline_base2 import PipelineBase2
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.cuda.amp import autocast
-class Image_training2(PipelineBase):
+class Image_training2(PipelineBase2):
     '''
     training pipeline for pytorch distribution mode,
     
@@ -62,12 +62,15 @@ class Image_training2(PipelineBase):
         self.after_turn_hooks=after_turn_hooks
         self.before_turn_hooks=before_turn_hooks
 
-        PipelineBase._Check_Attribute(self.cfg,'net',(torch.nn.parallel.distributed.DistributedDataParallel,torch.nn.Module))
-        PipelineBase._Check_Attribute(self.cfg,'loss',(torch.nn.Module,))
-        PipelineBase._Check_Attribute(self.cfg,'opt',(torch.optim.Optimizer,))
-        PipelineBase._Check_Attribute(self.cfg,'train_dataset',(torch.utils.data.Dataset,))
-        PipelineBase._Check_Attribute(self.cfg,'BATCH_SIZE',(int,))
-        PipelineBase._Check_Attribute(self.cfg,'EPOCH',(int,))
+        if self.ddp:
+            PipelineBase2._Check_Attribute(self.cfg,'net',torch.nn.parallel.distributed.DistributedDataParallel)
+        else:
+            PipelineBase2._Check_Attribute(self.cfg,'net',torch.nn.Module)
+        PipelineBase2._Check_Attribute(self.cfg,'loss')
+        PipelineBase2._Check_Attribute(self.cfg,'opt',(torch.optim.Optimizer,))
+        PipelineBase2._Check_Attribute(self.cfg,'train_dataset',(torch.utils.data.Dataset,))
+        PipelineBase2._Check_Attribute(self.cfg,'BATCH_SIZE',(int,))
+        PipelineBase2._Check_Attribute(self.cfg,'EPOCH',(int,))
 
         CFG=self.cfg
         if self.ddp:

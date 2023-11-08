@@ -1,5 +1,6 @@
 import torch
 import os
+from typing import Any
 from contextlib import contextmanager
 class PipelineBase2():
     def __init__(self,default_device='cpu') -> None:
@@ -28,9 +29,10 @@ class PipelineBase2():
                 hooks(*args)
 
     @staticmethod
-    def _Check_Attribute(obj,key:str,type:tuple):
+    def _Check_Attribute(obj,key:str,type: tuple | Any =None):
         if hasattr(obj,key):
-            assert isinstance(obj.__dict__[key],type)
+            if type is not None:
+                assert isinstance(obj.__dict__[key],type)
         else:
             raise Exception(f'Missing "{key}" with type "{type}"')
         
