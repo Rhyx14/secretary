@@ -113,4 +113,5 @@ class Training_Secretary(Secretary_base):
         Offload the interim tensor to cpu for reducing VRAM cost 
         '''
         if flag:
+            self.warning('Offloading is enabled, may impact the training efficiency.')
             offload_module(module_type,net,ratio)

@@ -65,6 +65,21 @@ class Secretary_base():
         '''
         self.logger.info(msg)
         return self
+    
+    @solo_chaining_method
+    def warning(self,msg):
+        '''
+        log warning (solo) -> self
+        '''
+        self.logger.warning(msg)
+        return self
+
+    def warning_all(self,msg):
+        '''
+        log warning (tutti) -> self
+        '''
+        self.logger.warning(msg)
+        return self
 
     @solo_method
     def record_serial_data(self,name,index,value):
