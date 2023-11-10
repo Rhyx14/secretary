@@ -1,6 +1,7 @@
 import os
 import torch
 import argparse
+import torch.distributed as dist
 from typing import Any, Union
 import re
 class Configuration():
@@ -11,6 +12,8 @@ class Configuration():
         self._parser=argparse.ArgumentParser()
         self.NAME='default'
 
+        # check whether this process is elastic launched, mostly for ddp training
+        self.DDP=dist.is_torchelastic_launched()
         pass
 
     def update(self,params:dict):
@@ -98,11 +101,17 @@ class Configuration():
     
     def get_records_str_and_reset(self):
         '''
-        stringify the changed properties and reset
+        stringify the changed properties and reset the record
         '''
         ls=self.get_records_str()
         self.reset_records()
         return ls
+    
+    def spot(self):
+        '''
+        Alias of get_records_str_and_reset()
+        '''
+        return self.get_records_str_and_reset()
     
     def _process_args(self,_tuple):
         match len(_tuple):
