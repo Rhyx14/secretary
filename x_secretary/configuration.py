@@ -32,6 +32,8 @@ class Configuration():
         _weight:dict=None
         if path is not None:
             _weight=torch.load(path,map_location='cpu')
+            self.__setattr__(weight_key,str(path))
+            
         elif hasattr(self,weight_key):
             _weight=torch.load(self.__dict__[weight_key],map_location='cpu')
         
