@@ -1,29 +1,23 @@
 import torch
 import os
+from typing import Any
 from contextlib import contextmanager
 class PipelineBase():
-    def __init__(self,logger,net,before_hooks,after_hooks) -> None:
-        self.logger=logger
-        self.net=net
-        # assert isinstance(self.net,torch.nn.Module)
-        self.before_hooks=before_hooks
-        self.after_hooks=after_hooks
+    def __init__(self,default_device='cpu') -> None:
+        self.default_device=default_device
         pass
+    
+    def _unpack_seg(self,datum):
+        return datum['X'].to(self.default_device),datum['Y'].to(self.default_device)
+
+    def _unpack_cls(self,datum):
+        return datum[0].to(self.default_device),datum[1].to(self.default_device)
     
     def Run(self,*args,**kwds):
         raise NotImplementedError
 
     def __call__(self, *args, **kwds):
-        PipelineBase.call_hooks(self.before_hooks,self)
-        rslt=self.Run(*args,**kwds)
-        PipelineBase.call_hooks(self.after_hooks,self)
-        return rslt
-    
-    def Eval(self):
-        self.net.eval()
-    
-    def Train(self):
-        self.net.train()
+        return self.Run(*args,**kwds)
 
     @staticmethod
     def call_hooks(hooks,*args):
@@ -33,10 +27,12 @@ class PipelineBase():
                     h(*args)
             else:
                 hooks(*args)
+
     @staticmethod
-    def _Check_Attribute(obj,key:str,type:tuple):
+    def _Check_Attribute(obj,key:str,type: tuple | Any =None):
         if hasattr(obj,key):
-            assert isinstance(obj.__dict__[key],type)
+            if type is not None:
+                assert isinstance(obj.__dict__[key],type)
         else:
             raise Exception(f'Missing "{key}" with type "{type}"')
         

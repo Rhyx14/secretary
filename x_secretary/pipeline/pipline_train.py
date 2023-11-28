@@ -2,10 +2,10 @@ from enum import Enum
 import torch
 from torch.utils.data.dataloader import DataLoader
 from ..utils.ddp_sampler import DDP_BatchSampler
-from .pipeline_base2 import PipelineBase2
+from .pipeline_base import PipelineBase
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.cuda.amp import autocast
-class Image_training2(PipelineBase2):
+class Image_training(PipelineBase):
     '''
     training pipeline for pytorch distribution mode,
     
@@ -63,14 +63,14 @@ class Image_training2(PipelineBase2):
         self.before_turn_hooks=before_turn_hooks
 
         if self.ddp:
-            PipelineBase2._Check_Attribute(self.cfg,'net',torch.nn.parallel.distributed.DistributedDataParallel)
+            PipelineBase._Check_Attribute(self.cfg,'net',torch.nn.parallel.distributed.DistributedDataParallel)
         else:
-            PipelineBase2._Check_Attribute(self.cfg,'net',torch.nn.Module)
-        PipelineBase2._Check_Attribute(self.cfg,'loss')
-        PipelineBase2._Check_Attribute(self.cfg,'opt',(torch.optim.Optimizer,))
-        PipelineBase2._Check_Attribute(self.cfg,'train_dataset',(torch.utils.data.Dataset,))
-        PipelineBase2._Check_Attribute(self.cfg,'BATCH_SIZE',(int,))
-        PipelineBase2._Check_Attribute(self.cfg,'EPOCH',(int,))
+            PipelineBase._Check_Attribute(self.cfg,'net',torch.nn.Module)
+        PipelineBase._Check_Attribute(self.cfg,'loss')
+        PipelineBase._Check_Attribute(self.cfg,'opt',(torch.optim.Optimizer,))
+        PipelineBase._Check_Attribute(self.cfg,'train_dataset',(torch.utils.data.Dataset,))
+        PipelineBase._Check_Attribute(self.cfg,'BATCH_SIZE',(int,))
+        PipelineBase._Check_Attribute(self.cfg,'EPOCH',(int,))
 
         CFG=self.cfg
         if self.ddp:
@@ -91,8 +91,8 @@ class Image_training2(PipelineBase2):
                 drop_last=True)
         
         match mode:
-            case Image_training2.Mode.CLASSIFICATION: self._unpack = self._unpack_cls
-            case Image_training2.Mode.SEGMENTATION  : self._unpack = self._unpack_seg
+            case Image_training.Mode.CLASSIFICATION: self._unpack = self._unpack_cls
+            case Image_training.Mode.SEGMENTATION  : self._unpack = self._unpack_seg
             case _ : raise  NotImplementedError(f'Pipleline for {mode} hasn''t been implemented yet.')
 
         super().__init__(default_device)
@@ -106,12 +106,12 @@ class Image_training2(PipelineBase2):
 
         for ep in range(CFG.EPOCH):
             
-            PipelineBase2.call_hooks(self.before_epoch_hooks,self.cfg)
+            PipelineBase.call_hooks(self.before_epoch_hooks,self.cfg)
             for _b_id,datum in enumerate(self._dl):
 
                 x,y=self._unpack(datum)
 
-                PipelineBase2.call_hooks(self.before_turn_hooks,self.cfg)
+                PipelineBase.call_hooks(self.before_turn_hooks,self.cfg)
 
                 if(mix_precision):
                     with autocast():
@@ -124,10 +124,10 @@ class Image_training2(PipelineBase2):
                     _loss.backward()
 
                 CFG.opt.zero_grad(set_to_none=True)                   
-                PipelineBase2.call_hooks(self.after_turn_hooks,self.cfg,_b_id,_loss.item(),ep)
+                PipelineBase.call_hooks(self.after_turn_hooks,self.cfg,_b_id,_loss.item(),ep)
 
             if hasattr(CFG,'lr_scheduler'):
                 CFG.lr_scheduler.step()
 
-            PipelineBase2.call_hooks(self.after_epoch_hooks,self.cfg,_loss.item(),ep)
+            PipelineBase.call_hooks(self.after_epoch_hooks,self.cfg,_loss.item(),ep)
         return
