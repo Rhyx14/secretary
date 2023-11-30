@@ -53,7 +53,7 @@ class Image_training(PipelineBase):
         ddp=False,
         dl_workers=3,prefetch_factor=2,
         default_device='cpu',
-        mode='classification'
+        mode=Mode.CLASSIFICATION
         ):
         self.cfg=cfg
         self.ddp=ddp

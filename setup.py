@@ -17,11 +17,12 @@ setup(
           'Programming Language :: Python :: 3.10',
       ],
       install_requires=['torch'],
-      extras_requires=['opencv-python'],
+      extras_requires=['opencv-python','accelerate'],
+      scripts=['bin/xsrun'],
     #   entry_points={'console_scripts': ['pmm=pimm.pimm_module:main']},
     #   package_data={'': ['*.json']},
       author='rhyx14', # 作者
-      description='Auxiliary tools for pytorch training ', # 介绍
+      description='Auxiliary tools for pytorch training.', # 介绍
     #   long_description=long_description, # 长介绍，在pypi项目页显示
     #   long_description_content_type='text/markdown', # 长介绍使用的类型
       url='https://github.com/Rhyx14/secretary', # 包主页，一般是github项目主页

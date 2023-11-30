@@ -65,7 +65,7 @@ class Image_Val_Pipeline(PipelineBase):
         r=acc/float(len(self.dataset))
         return acc, r, _loss
 
-        
+from ..utils.semantic_segmentation.metric import Metric
 class ImageSegmentation_Val_Pipeline(PipelineBase):
     '''
     val pipline for image classification

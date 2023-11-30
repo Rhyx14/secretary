@@ -1,0 +1,97 @@
+#!python
+import subprocess
+import queue
+from x_secretary.configuration import Configuration
+from pathlib import Path
+import os
+import json
+
+CFG=Configuration().add_args([
+    ('-template','get template'),
+    ('-i','--input',str,'.','the cmd file'),
+    ('-g','--GPU',str,'0','index of avaliable GPU IDs: 0,1,2,3...'),
+])
+
+template='''
+{
+    "mode":"plain",
+    "cmds":[
+        [
+            "ls -l",
+            "ls -l"
+        ],
+        [
+            "ls -l",
+            "ls -l"
+        ]
+    ]
+}
+'''
+
+def get_elements_from_queue(cmd_queue, num_elements):
+    result = []
+    for _ in range(num_elements):
+        if not cmd_queue.empty():
+            result.append(cmd_queue.get())
+        else:
+            break
+    return result
+
+def get_process(raw_cmd:str,replace_dict:dict):
+    _cmd=raw_cmd.split(' ')
+    for _i,_param in enumerate(_cmd):
+        if _param in replace_dict:
+            _cmd[_i]=replace_dict[_param]
+    return subprocess.Popen(_cmd)
+
+def run():
+    _batch_json=json.loads(Path.read_text(Path(CFG.input)))
+    CFG.update(_batch_json)
+    gpus=CFG.GPU.split(',')
+
+    if CFG.mode=='plain':
+        # 按照配置中的命令的分组执行(严格字面值)，都执行完成后再执行下一组
+        for _cmd_group in CFG.cmds:
+            _process= [get_process(_raw_cmd,{}) for _raw_cmd in _cmd_group]
+            for p in _process : p.wait()
+    else:
+        # 无视分组
+        cmd_queue=queue.Queue()
+        for _cmd in CFG.cmds:
+            if isinstance(_cmd,list):
+                for _c in _cmd : cmd_queue.put(_c)
+            elif isinstance(_cmd,str):
+                cmd_queue.put(_cmd)
+            else: raise ValueError
+
+        if CFG.mode=='step':
+            # 每次都按照固定数量执行，都执行完成后再执行下一批
+            while(not cmd_queue.empty()):
+                _cmd_list=get_elements_from_queue(cmd_queue,len(gpus))
+                if len(_cmd_list) != 0:
+                    process=[get_process(raw_cmd,{'#GPU':gid}) for gid,raw_cmd in zip(gpus,_cmd_list)]
+                    for p in process : p.wait()
+
+        elif CFG.mode=='eager':
+            # 不按顺序执行，有空闲的设备即执行
+            import threading
+            def run(gid):
+                try:
+                    while not cmd_queue.empty():
+                        _raw_cmd=cmd_queue.get(block=False)
+                        get_process(_raw_cmd,{'#GPU':gid}).wait()
+                    pass
+                except queue.Empty:
+                    return
+                return
+            _threads=[threading.Thread(target=run,args=(_gid,)) for _gid in gpus]
+            for _th in _threads: _th.start()
+            for _th in _threads: _th.join()
+
+        else:
+            raise NotImplementedError
+
+if CFG.template:
+    print(template)
+else:
+    run()

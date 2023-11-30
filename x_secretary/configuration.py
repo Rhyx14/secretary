@@ -121,7 +121,7 @@ class Configuration():
             case 3: self._parser.add_argument(_tuple[0],help=_tuple[2],type=_tuple[1])
             case 4: self._parser.add_argument(_tuple[0],help=_tuple[3],type=_tuple[1],default=_tuple[2])
             case 5: self._parser.add_argument(_tuple[0],_tuple[1],help=_tuple[4],type=_tuple[2],default=_tuple[3])
-            case _: raise ValueError(f'Invalid length of tuple: {len(_tuple)}, which should be 3,4 or 5')
+            case _: raise ValueError(f'Invalid length of tuple: {len(_tuple)}, which should be 2,3,4 or 5')
 
     def add_args(self,args:Union[list,tuple]):
         '''
