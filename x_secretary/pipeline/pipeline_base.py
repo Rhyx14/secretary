@@ -34,7 +34,7 @@ class PipelineBase():
             if type is not None:
                 assert isinstance(obj.__dict__[key],type)
         else:
-            raise Exception(f'Missing "{key}" with type "{type}"')
+            raise Exception(f'Missing "{str(key)}" with type "{str(type)}"')
         
     @staticmethod
     @contextmanager

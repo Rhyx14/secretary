@@ -2,7 +2,7 @@ import torch
 from .pipeline_base import PipelineBase
 from torch.utils.data.dataloader import DataLoader
 from torch.cuda.amp import autocast
-class Image_Val_Pipeline(PipelineBase):
+class Image_val(PipelineBase):
     def __init__(self, 
             logger,
             batch_size,
@@ -13,7 +13,9 @@ class Image_Val_Pipeline(PipelineBase):
             before_turn_hooks=None,
             after_turn_hooks=None,
         ) -> None:
-        super().__init__(logger, net, None, None)
+        super().__init__(None)
+        self.net=net
+        self.logger=logger
         self.batch_size=batch_size
         self.dataset=dataset
         self.dl_workers=dl_workers
@@ -66,7 +68,7 @@ class Image_Val_Pipeline(PipelineBase):
         return acc, r, _loss
 
 from ..utils.semantic_segmentation.metric import Metric
-class ImageSegmentation_Val_Pipeline(PipelineBase):
+class Image_segmentation_val(PipelineBase):
     '''
     val pipline for image classification
 
@@ -75,18 +77,19 @@ class ImageSegmentation_Val_Pipeline(PipelineBase):
     after_turn_hooks : hooks after each training turn, with parameter (batch_id)
     '''
     def __init__(self,
-        logger,
-        batch_size,
-        n_classes,
-        net:torch.nn.Module,
-        dataset,
-        cuda_device:list=None,
-        dl_workers=2,
-        dl_prefetch_factor=2,
-        before_turn_hooks=None,
-        after_turn_hooks=None,):
-        super().__init__(logger,net,None,None)
-        
+            logger,
+            batch_size,
+            n_classes,
+            net:torch.nn.Module,
+            dataset,
+            cuda_device:list=None,
+            dl_workers=2,
+            dl_prefetch_factor=2,
+            before_turn_hooks=None,
+            after_turn_hooks=None,):
+        super().__init__()
+        self.net=net
+        self.logger=logger
         self.batch_size=batch_size
         self.cuda_device=cuda_device
         self.n_classes=n_classes

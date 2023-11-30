@@ -112,18 +112,21 @@ class Image_training(PipelineBase):
                 x,y=self._unpack(datum)
 
                 PipelineBase.call_hooks(self.before_turn_hooks,self.cfg)
+                CFG.opt.zero_grad(set_to_none=True)
 
                 if(mix_precision):
                     with autocast():
                         _out=CFG.net(x)
                         _loss = CFG.loss(_out,y)
                     scaler.scale(_loss).backward()
+                    scaler.step(CFG.opt)
+                    scaler.update()
+                    
                 else:
                     _out=CFG.net(x)
                     _loss = CFG.loss(_out,y)
                     _loss.backward()
-
-                CFG.opt.zero_grad(set_to_none=True)                   
+                    CFG.opt.step()
                 PipelineBase.call_hooks(self.after_turn_hooks,self.cfg,_b_id,_loss.item(),ep)
 
             if hasattr(CFG,'lr_scheduler'):

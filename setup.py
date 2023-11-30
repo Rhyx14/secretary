@@ -13,7 +13,6 @@ setup(
           'Development Status :: 3 - Alpha',
           'License :: OSI Approved :: MIT License',
           'Programming Language :: Python', 'Intended Audience :: Developers',
-        #   'Operating System :: OS Independent',
           'Programming Language :: Python :: 3.10',
       ],
       install_requires=['torch'],
