@@ -86,6 +86,7 @@ class Image_training(PipelineBase):
             self._dl=DataLoader(CFG.train_dataset,
                 batch_size=CFG.BATCH_SIZE,
                 num_workers=dl_workers,
+                pin_memory=True,
                 prefetch_factor=prefetch_factor,
                 shuffle=True,
                 drop_last=True)
