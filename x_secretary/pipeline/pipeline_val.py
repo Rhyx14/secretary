@@ -100,7 +100,7 @@ class Image_segmentation_val(PipelineBase):
         self.before_turn_hooks=before_turn_hooks
         self.after_turn_hooks=after_turn_hooks
 
-    def Run(self,epoch=-1,*args,**kwargs):
+    def Run(self,*args,**kwargs):
 
         metric=Metric(self.n_classes)
         dl=DataLoader(self.dataset,batch_size=self.batch_size,num_workers=self.dl_workers,prefetch_factor=self.dl_prefetch_factor,pin_memory=False)

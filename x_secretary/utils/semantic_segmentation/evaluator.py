@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import einops
 class EvaluatorBase:
-    def __init__(self, model:torch.nn.Module,n_classes,color_table, process_image:callable):
+    def __init__(self, model:torch.nn.Module,color_table):
         '''
         evaluator base for image semantic segmentation
 
@@ -21,9 +21,14 @@ class EvaluatorBase:
         get_img_args: additional params for get_img
         '''
         self.model=model
-        self.n_classes=n_classes
+        self.n_classes=len(color_table)
         self.color_table=color_table
-        self.process_image=process_image
+
+    def _load_img(self,img_path):
+        raise NotImplementedError
+    
+    def _load_label(self,label_path):
+        raise NotImplementedError
 
     def get_pred(self,img:torch.Tensor) -> torch.Tensor:
         """
@@ -45,7 +50,7 @@ class EvaluatorBase:
 
         return pred
 
-    def get_masked_results(self,img:torch.Tensor) -> np.ndarray:
+    def get_colored_results(self,pred:torch.Tensor) -> np.ndarray:
         """
         predict one image and render the results in color
 
@@ -55,26 +60,23 @@ class EvaluatorBase:
         Returns:
             results picture, (BGR)
         """
-        o_c ,o_h, o_w = img.shape
-
-        pred=self.get_pred(img).numpy()
-        pred_img = np.zeros((h, w, 3), dtype=np.float32)
+        o_c ,o_h, o_w = pred.shape
+        pred_img = np.zeros((o_h, o_w, 3), dtype=np.float32)
         for cls in range(self.n_classes):
             pred_inds = pred == cls
-            # label = index2label[cls]
             color=self.color_table[cls]
             pred_img[pred_inds] = color
 
-        pred_img = cv2.resize(pred_img,(o_w,o_h))
         return pred_img
 
     def test_img(self,img_path,out_path):
         '''
         test one img, and save colored mask to file
         '''
-        img,origin_shape= self.process_image(str(img_path))
-
-        pred_img = self.get_masked_results(img)
+        img,shape= self._load_img(str(img_path))
+        pred = self.get_pred(img)
+        pred_img = self.get_colored_results(pred)
+        pred_img = cv2.resize(pred_img,(shape[1],shape[0])) # w,h
         pred_img = cv2.cvtColor(pred_img,cv2.COLOR_RGB2BGR)
 
         cv2.imwrite(str(out_path),pred_img)
@@ -104,7 +106,7 @@ class EvaluatorBase:
             self.test_img(f,r)
             if finish_hook is not None: finish_hook(f)
 
-    def calculate_metrics(self,pred,gt):
-        metric=Metric(self.n_classes)
-        metric.add_batch(gt,pred)
-        return metric.Pixel_Accuracy(),metric.Mean_Intersection_over_Union()
+    # def calculate_metrics(self,pred,gt):
+    #     metric=Metric(self.n_classes)
+    #     metric.add_batch(gt,pred)
+    #     return metric.Pixel_Accuracy(),metric.Mean_Intersection_over_Union()
