@@ -82,7 +82,7 @@ class Image_segmentation_val(PipelineBase):
             n_classes,
             net:torch.nn.Module,
             dataset,
-            cuda_device:list=None,
+            cuda_device:str=None,
             dl_workers=2,
             dl_prefetch_factor=2,
             before_turn_hooks=None,
@@ -106,7 +106,7 @@ class Image_segmentation_val(PipelineBase):
         dl=DataLoader(self.dataset,batch_size=self.batch_size,num_workers=self.dl_workers,prefetch_factor=self.dl_prefetch_factor,pin_memory=False)
         with torch.no_grad():
             for iter, datum in enumerate(dl):
-               inputs = datum['X'].cuda()
+               inputs = datum['X'].to(self.cuda_device)
                gt=datum['l'].cpu().numpy()
 
                # simulate snn

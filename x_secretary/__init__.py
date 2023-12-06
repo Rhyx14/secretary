@@ -17,6 +17,7 @@ from .utils.opencv_loader import OpenCV_Loader
 from .utils.count_parameters import count_parameters
 from .utils.autodl import info_wechat_autodl
 from .utils.faster_save_on_cpu import offload_module,restore_offload
+from .utils.split_bn_parameters import split_bn_parameters
 
 __all__.extend([
     'DDP_BatchSampler',
@@ -29,7 +30,8 @@ __all__.extend([
     'OpenCV_Loader',
     'count_parameters',
     'info_wechat_autodl',
-    'offload_module','restore_offload'
+    'offload_module','restore_offload',
+    'split_bn_parameters'
 ])
 
 from .configuration import Configuration

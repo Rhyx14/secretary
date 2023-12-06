@@ -7,7 +7,7 @@ from torch.cuda.amp.grad_scaler import GradScaler
 from torch.cuda.amp import autocast
 class Image_training(PipelineBase):
     '''
-    training pipeline for pytorch distribution mode,
+    A training pipeline for supervised learning,
     
     -----
 
@@ -17,7 +17,7 @@ class Image_training(PipelineBase):
     
         'train_dataset':torch.data.Dataset,
 
-        'net':torch.nn.Module,
+        'net':torch.nn.Module  | torch.nn.parallel.distributed.DistributedDataParallel,
 
         'loss':torch.nn.Module,
 

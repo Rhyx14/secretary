@@ -40,7 +40,7 @@ class Training_Secretary(Secretary_base):
             # 打印环境信息
             f.write(get_sys_info())
 
-    @solo_method
+    @solo_chaining_method
     def log_to_cfg(self,s,prefix=''):
         '''
         log string to the configuration files,
@@ -52,6 +52,7 @@ class Training_Secretary(Secretary_base):
             if not isinstance(s,str):
                 s=s()
             f.write(s)
+        return self
     
     def _add_logger_file_handler(self,path):
         if hasattr(self,'_logger_filehandler'):

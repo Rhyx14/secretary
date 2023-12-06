@@ -81,7 +81,7 @@ class Secretary_base():
         self.logger.warning(msg)
         return self
 
-    @solo_method
+    @solo_chaining_method
     def record_serial_data(self,name,index,value):
         '''
         record data (solo)
@@ -93,6 +93,7 @@ class Secretary_base():
         value: value of the current datum
         '''
         self.data_recorder.record_serial_data(name,index,value)
+        return self
     
     def get_data(self,name):
         '''

@@ -1,7 +1,7 @@
 import torch
 from torchvision import transforms
 def crop(img,crop_factor=32,down_size=1):
-    h, w = img.shape
+    h, w = img.shape[-2],img.shape[-1]
     
     _new_h= ((h//down_size)//crop_factor)*crop_factor
     _new_w= ((w//down_size)//crop_factor)*crop_factor
@@ -27,6 +27,6 @@ def rot90(img,label,p):
     '''
     if(torch.rand(1).item()<p):
         k=torch.randint(1,3,(1,)).item()
-        img=torch.rot90(img,k)
+        img=torch.rot90(img,k,dims=[1,2])
         label=torch.rot90(label,k)
     return img,label

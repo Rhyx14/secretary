@@ -48,7 +48,7 @@ class Seg_Dataset(Dataset):
         self.dir=Path(dir)
         self.n_class=n_class
 
-        tmp=json.load(Path.read_text(self.dir / json_file))
+        tmp=json.loads(Path.read_text(self.dir / json_file))
         
         self.train_files = tmp['train']
         self.val_files   = tmp['val']
@@ -78,13 +78,14 @@ class Seg_Dataset(Dataset):
         label = torch.from_numpy(label.copy()).long()
         # [h,w,c] -> [c,h,w] -> [h,w]
         label=label.permute(2,0,1)[0]
+        return label
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        img_name=self.data[idx]['img']
-        label_name=self.data[idx]['label']
+        img_name=self.data[idx][0]
+        label_name=self.data[idx][1]
 
         img= self._load_img(self.dir / img_name)
         label=self._load_label(self.dir/ label_name)
@@ -93,8 +94,8 @@ class Seg_Dataset(Dataset):
             if isinstance(self.union_transform,list):
                 for _trans in self.union_transform:
                     img,label=_trans(img,label)
-                else: 
-                    img,label=self.union_transform(img,label)
+            else: 
+                img,label=self.union_transform(img,label)
 
         if self.transform is not None:
             img=self.transform(img)
