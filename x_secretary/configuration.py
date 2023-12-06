@@ -7,7 +7,7 @@ import re
 class Configuration():
     def __init__(self,auto_record=False) -> None:
         self._auto_record=auto_record
-        self._change_list=[]
+        self._change_set=set()
         
         self._parser=argparse.ArgumentParser()
         self.NAME='default'
@@ -77,7 +77,7 @@ class Configuration():
 
     def __setattr__(self, __name: str, __value: Any) -> None:
         if not str.startswith(__name,'_') and self._auto_record:
-            self._change_list.append(__name)
+            self._change_set.add(__name)
         self.__dict__[__name]=__value
         pass
 
@@ -85,7 +85,7 @@ class Configuration():
         '''
         clear records of changed property name
         '''
-        self._change_list.clear()
+        self._change_set.clear()
         return self
 
     def get_records_str(self):
@@ -93,7 +93,7 @@ class Configuration():
         stringify the changed properties
         '''
         ls=''
-        for _name in self._change_list:
+        for _name in self._change_set:
             v=self.__dict__[_name]
             if isinstance(v,(str,int,float)):
                 ls += "%s\t%s\n" % (_name,v)

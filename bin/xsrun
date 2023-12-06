@@ -73,6 +73,7 @@ def run():
                     for p in process : p.wait()
 
         elif CFG.mode=='eager':
+            raise NotImplementedError
             # 不按顺序执行，有空闲的设备即执行
             import threading
             def run(gid):
