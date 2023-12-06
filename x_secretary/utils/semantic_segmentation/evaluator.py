@@ -60,7 +60,7 @@ class EvaluatorBase:
         Returns:
             results picture, (BGR)
         """
-        o_c ,o_h, o_w = pred.shape
+        o_h, o_w = pred.shape
         pred_img = np.zeros((o_h, o_w, 3), dtype=np.float32)
         for cls in range(self.n_classes):
             pred_inds = pred == cls
@@ -69,7 +69,7 @@ class EvaluatorBase:
 
         return pred_img
 
-    def test_img(self,img_path,out_path):
+    def test_img(self,img_path: str,out_path:str):
         '''
         test one img, and save colored mask to file
         '''
