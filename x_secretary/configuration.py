@@ -29,6 +29,27 @@ class Configuration():
         return value
     
     def load_weight(self,net:torch.nn.Module,strict=False,weight_key='PRE_TRAIN',path=None,include=None,exclude=None):
+        """Load weight of networks.
+
+        If 'path' is given, load the weight from the path.
+        
+        else if 'weight_key' is given, load the configuration[weight_key].
+
+        'include' means only specific layers are loaded.
+
+        'exclude' means layers other than designated layers will be loaded.
+
+        Args:
+            net (torch.nn.Module): the torch module
+            strict (bool, optional): strict mode, same as the arg in torch.load. Defaults to False.
+            weight_key (str, optional): default key of weight in the object. Defaults to 'PRE_TRAIN'.
+            path (_type_, optional): weight path. Defaults to None.
+            include (_type_, optional): include pattern (re). Defaults to None.
+            exclude (_type_, optional): exlude pattern (re). Defaults to None.
+
+        Returns:
+            None
+        """
         _weight:dict=None
         if path is not None:
             _weight=torch.load(path,map_location='cpu')

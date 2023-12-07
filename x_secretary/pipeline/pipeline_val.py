@@ -10,8 +10,8 @@ class Image_val(PipelineBase):
             dataset,
             dl_workers=4,
             dl_prefetch_factor=4,
-            before_turn_hooks=None,
-            after_turn_hooks=None,
+            on_turn_begin=None,
+            on_turn_end=None,
         ) -> None:
         super().__init__(None)
         self.net=net
@@ -20,8 +20,8 @@ class Image_val(PipelineBase):
         self.dataset=dataset
         self.dl_workers=dl_workers
         self.dl_prefetch_factor=dl_prefetch_factor
-        self.before_turn_hooks=before_turn_hooks
-        self.after_turn_hooks=after_turn_hooks
+        self.on_turn_begin=on_turn_begin
+        self.on_turn_end=on_turn_end
         
         from accelerate import Accelerator
         self._accelerator=Accelerator(split_batches=True,even_batches=False)
@@ -44,7 +44,7 @@ class Image_val(PipelineBase):
 
                 # x=x.to(self._accelerator.device,non_blocking=True)
                 # label=label.to(self._accelerator.device,non_blocking=True)
-                PipelineBase.call_hooks(self.before_turn_hooks)
+                PipelineBase.call_hooks(self.on_turn_begin)
 
                 # simulate snn
                 if(mix_precision):
@@ -59,7 +59,7 @@ class Image_val(PipelineBase):
                 pred = _out.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
                 acc += pred.eq(label.view_as(pred)).sum().item() 
                 
-                PipelineBase.call_hooks(self.after_turn_hooks,_bid,_loss)
+                PipelineBase.call_hooks(self.on_turn_end,_bid,_loss)
 
             acc=self._accelerator.reduce(acc,reduction='sum').item()
             _loss=self._accelerator.reduce(_loss,reduction='mean').item()
@@ -103,7 +103,11 @@ class Image_segmentation_val(PipelineBase):
     def Run(self,*args,**kwargs):
 
         metric=Metric(self.n_classes)
-        dl=DataLoader(self.dataset,batch_size=self.batch_size,num_workers=self.dl_workers,prefetch_factor=self.dl_prefetch_factor,pin_memory=False)
+        dl=DataLoader(self.dataset,
+                      batch_size=self.batch_size,
+                      num_workers=self.dl_workers,
+                      prefetch_factor=self.dl_prefetch_factor,
+                      pin_memory=True)
         with torch.no_grad():
             for iter, datum in enumerate(dl):
                inputs = datum['X'].to(self.cuda_device)
@@ -118,19 +122,7 @@ class Image_segmentation_val(PipelineBase):
                
                metric.add_batch(gt,pred)
                PipelineBase.call_hooks(self.after_turn_hooks,iter)
-               # N, _, h, w = output.shape
-               # pred = output.transpose(0, 2, 3, 1).reshape(-1, N_CLASS).argmax(axis=1).reshape(N, h, w)
 
-               # target = datum['l'].cpu().numpy().reshape(N, h, w)
-               # for p, t in zip(pred, target):
-               #     total_ious.append(evaluator.iou(p, t))
-               #     pixel_accs.append(evaluator.pixel_acc(p, t))
-
-            # Calculate average IoU
-            # total_ious = np.array(total_ious).T  # n_class * val_len
-            # ious = np.nanmean(total_ious, axis=1)
-            # pixel_accs = np.array(pixel_accs).mean()
-            # logger.info("epoch{}, pix_acc: {}, meanIoU: {}".format(epoch, pixel_accs, np.nanmean(ious)))
             _acc=metric.Pixel_Accuracy()
             _miou=metric.Mean_Intersection_over_Union()
 

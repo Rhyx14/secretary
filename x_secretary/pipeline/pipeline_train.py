@@ -43,37 +43,38 @@ class Image_training(PipelineBase):
     class Mode(Enum):
         CLASSIFICATION=1
         SEGMENTATION=2
+        YOLO_DETECTION=3
 
     def __init__(self,
         cfg,
-        before_epoch_hooks=None,
-        after_epoch_hooks=None,
-        before_turn_hooks=None,
-        after_turn_hooks=None,
-        ddp=False,
-        dl_workers=3,prefetch_factor=2,
+        on_epoch_begin=None,
+        on_epoch_end=None,
+        on_turn_begin=None,
+        on_turn_end=None,
+        DDP=False,
+        dl_workers=4,prefetch_factor=2,
         default_device='cpu',
         mode=Mode.CLASSIFICATION
         ):
-        self.cfg=cfg
-        self.ddp=ddp
-        self.after_epoch_hooks=after_epoch_hooks
-        self.before_epoch_hooks=before_epoch_hooks
-        self.after_turn_hooks=after_turn_hooks
-        self.before_turn_hooks=before_turn_hooks
+        self._cfg=cfg
+        self._ddp=DDP
+        self.on_epoch_end=on_epoch_end
+        self.on_epoch_begin=on_epoch_begin
+        self.on_turn_begin=on_turn_begin
+        self.on_turn_end=on_turn_end
 
-        if self.ddp:
-            PipelineBase._Check_Attribute(self.cfg,'net',torch.nn.parallel.distributed.DistributedDataParallel)
+        if self._ddp:
+            PipelineBase._Check_Attribute(self._cfg,'net',torch.nn.parallel.distributed.DistributedDataParallel)
         else:
-            PipelineBase._Check_Attribute(self.cfg,'net',torch.nn.Module)
-        PipelineBase._Check_Attribute(self.cfg,'loss')
-        PipelineBase._Check_Attribute(self.cfg,'opt',(torch.optim.Optimizer,))
-        PipelineBase._Check_Attribute(self.cfg,'train_dataset',(torch.utils.data.Dataset,))
-        PipelineBase._Check_Attribute(self.cfg,'BATCH_SIZE',(int,))
-        PipelineBase._Check_Attribute(self.cfg,'EPOCH',(int,))
+            PipelineBase._Check_Attribute(self._cfg,'net',torch.nn.Module)
+        PipelineBase._Check_Attribute(self._cfg,'loss')
+        PipelineBase._Check_Attribute(self._cfg,'opt',(torch.optim.Optimizer,))
+        PipelineBase._Check_Attribute(self._cfg,'train_dataset',(torch.utils.data.Dataset,))
+        PipelineBase._Check_Attribute(self._cfg,'BATCH_SIZE',(int,))
+        PipelineBase._Check_Attribute(self._cfg,'EPOCH',(int,))
 
-        CFG=self.cfg
-        if self.ddp:
+        CFG=self._cfg
+        if self._ddp:
             self._dl=DataLoader(CFG.train_dataset,
                 num_workers=dl_workers,
                 prefetch_factor=prefetch_factor,
@@ -94,12 +95,13 @@ class Image_training(PipelineBase):
         match mode:
             case Image_training.Mode.CLASSIFICATION: self._unpack = self._unpack_cls
             case Image_training.Mode.SEGMENTATION  : self._unpack = self._unpack_seg
+            case Image_training.Mode.YOLO_DETECTION: self._unpack = self._unpack_cls
             case _ : raise  NotImplementedError(f'Pipleline for {mode} hasn''t been implemented yet.')
 
         super().__init__(default_device)
 
     def Run(self,mix_precision=False,*args,**kwargs):
-        CFG=self.cfg
+        CFG=self._cfg
 
         CFG.net.train()
         
@@ -107,12 +109,12 @@ class Image_training(PipelineBase):
 
         for ep in range(CFG.EPOCH):
             
-            PipelineBase.call_hooks(self.before_epoch_hooks,self.cfg)
+            PipelineBase.call_hooks(self.on_epoch_begin,self._cfg)
             for _b_id,datum in enumerate(self._dl):
 
                 x,y=self._unpack(datum)
 
-                PipelineBase.call_hooks(self.before_turn_hooks,self.cfg)
+                PipelineBase.call_hooks(self.on_turn_begin,self._cfg)
                 CFG.opt.zero_grad(set_to_none=True)
 
                 if(mix_precision):
@@ -128,10 +130,10 @@ class Image_training(PipelineBase):
                     _loss = CFG.loss(_out,y)
                     _loss.backward()
                     CFG.opt.step()
-                PipelineBase.call_hooks(self.after_turn_hooks,self.cfg,_b_id,_loss.item(),ep)
+                PipelineBase.call_hooks(self.on_turn_end,self._cfg,_b_id,_loss.item(),ep)
 
             if hasattr(CFG,'lr_scheduler'):
                 CFG.lr_scheduler.step()
 
-            PipelineBase.call_hooks(self.after_epoch_hooks,self.cfg,_loss.item(),ep)
+            PipelineBase.call_hooks(self.on_epoch_end,self._cfg,_loss.item(),ep)
         return

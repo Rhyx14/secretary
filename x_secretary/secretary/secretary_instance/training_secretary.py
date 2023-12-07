@@ -33,10 +33,10 @@ class Training_Secretary(Secretary_base):
         '''
         ouput the environment
 
-        saving to 'configuration.txt' 
+        saving to 'env.txt' 
         '''
         # print(cfg_str)
-        with open(self.SAVED_DIR/'configuration.txt','w') as f:
+        with open(self.SAVED_DIR/'env.txt','w') as f:
             # 打印环境信息
             f.write(get_sys_info())
 
