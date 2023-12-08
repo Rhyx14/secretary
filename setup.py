@@ -16,7 +16,7 @@ setup(
           'Programming Language :: Python :: 3.10',
       ],
       install_requires=['torch'],
-      extras_requires=['opencv-python','accelerate'],
+      extras_requires=['opencv-python','accelerate','tqdm'],
       scripts=['bin/xsrun'],
     #   entry_points={'console_scripts': ['pmm=pimm.pimm_module:main']},
     #   package_data={'': ['*.json']},

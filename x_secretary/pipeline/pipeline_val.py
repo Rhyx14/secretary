@@ -2,14 +2,30 @@ import torch
 from .pipeline_base import PipelineBase
 from torch.utils.data.dataloader import DataLoader
 from torch.cuda.amp import autocast
+from tqdm import tqdm
+import torch.distributed as dist
+
+def DDP_progressbar(iterator):
+    if dist.is_torchelastic_launched() and dist.get_rank()==0:
+        return tqdm(iterator,leave=False)
+    else:
+        return iterator
+    
 class Image_val(PipelineBase):
+    '''
+    val pipline for image semantic segmentation
+
+    on_turn_begin : hooks before each training turn, with parameter ()
+
+    on_turn_end : hooks after each training turn, with parameter (batch_id)
+    '''
     def __init__(self, 
             logger,
             batch_size,
             net,
             dataset,
             dl_workers=4,
-            dl_prefetch_factor=4,
+            dl_prefetch_factor=2,
             on_turn_begin=None,
             on_turn_end=None,
         ) -> None:
@@ -40,10 +56,10 @@ class Image_val(PipelineBase):
             acc=torch.Tensor([0]).to(self._accelerator.device)
             _loss=torch.Tensor([0]).to(self._accelerator.device)
 
-            for _bid,(x,label) in enumerate(self._dl):
+            for _bid,(x,label) in enumerate(DDP_progressbar(self._dl)):
 
-                # x=x.to(self._accelerator.device,non_blocking=True)
-                # label=label.to(self._accelerator.device,non_blocking=True)
+                x=x.to(self._accelerator.device,non_blocking=True)
+                label=label.to(self._accelerator.device,non_blocking=True)
                 PipelineBase.call_hooks(self.on_turn_begin)
 
                 # simulate snn
@@ -67,14 +83,51 @@ class Image_val(PipelineBase):
         r=acc/float(len(self.dataset))
         return acc, r, _loss
 
+class Image_plain_val(Image_val):
+    def __init__(self, 
+            logger,
+            batch_size,
+            net,
+            dataset,
+            dl_workers=4,
+            dl_prefetch_factor=2,
+            on_turn_begin=None,
+            on_turn_end=None,
+        ) -> None:
+        super().__init__(logger,batch_size,net,dataset,dl_workers,dl_prefetch_factor,on_turn_begin,on_turn_end)
+
+    def Run(self,loss=None,mix_precision=False,*args,**kwargs):
+        with torch.no_grad():
+            _loss=torch.Tensor([0]).to(self._accelerator.device)
+
+            for _bid,(x,label) in enumerate(DDP_progressbar(self._dl)):
+                x=x.to(self._accelerator.device,non_blocking=True)
+                label=label.to(self._accelerator.device,non_blocking=True)
+
+                PipelineBase.call_hooks(self.on_turn_begin)
+                # simulate
+                if(mix_precision):
+                    with autocast():
+                        _out=self.net(x)
+                else:
+                    _out=self.net(x)  
+
+                if loss is not None:
+                    _loss = (_loss*_bid + loss(_out,label).item())/(_bid+1)
+
+                PipelineBase.call_hooks(self.on_turn_end,_bid,_loss)
+
+            _loss=self._accelerator.reduce(_loss,reduction='mean').item()
+        return _loss
+
 from ..utils.semantic_segmentation.metric import Metric
 class Image_segmentation_val(PipelineBase):
     '''
-    val pipline for image classification
+    val pipline for image semantic segmentation
 
-    before_turn_hooks : hooks before each training turn, with parameter ()
+    on_turn_begin : hooks before each training turn, with parameter ()
 
-    after_turn_hooks : hooks after each training turn, with parameter (batch_id)
+    on_turn_end : hooks after each training turn, with parameter (batch_id)
     '''
     def __init__(self,
             logger,
@@ -83,10 +136,10 @@ class Image_segmentation_val(PipelineBase):
             net:torch.nn.Module,
             dataset,
             cuda_device:str=None,
-            dl_workers=2,
+            dl_workers=4,
             dl_prefetch_factor=2,
-            before_turn_hooks=None,
-            after_turn_hooks=None,):
+            on_turn_begin=None,
+            on_turn_end=None,):
         super().__init__()
         self.net=net
         self.logger=logger
@@ -97,8 +150,8 @@ class Image_segmentation_val(PipelineBase):
         self.dl_workers=dl_workers
         self.dl_prefetch_factor=dl_prefetch_factor
 
-        self.before_turn_hooks=before_turn_hooks
-        self.after_turn_hooks=after_turn_hooks
+        self.on_turn_begin=on_turn_begin
+        self.on_turn_end=on_turn_end
 
     def Run(self,*args,**kwargs):
 
@@ -109,19 +162,19 @@ class Image_segmentation_val(PipelineBase):
                       prefetch_factor=self.dl_prefetch_factor,
                       pin_memory=True)
         with torch.no_grad():
-            for iter, datum in enumerate(dl):
+            for iter, datum in enumerate(tqdm(dl,leave=False)):
                inputs = datum['X'].to(self.cuda_device)
                gt=datum['l'].cpu().numpy()
 
                # simulate snn
-               PipelineBase.call_hooks(self.before_turn_hooks)
+               PipelineBase.call_hooks(self.on_turn_begin)
                output = self.net(inputs)
                output = output.data.cpu().numpy()
 
                pred=output.argmax(axis=1)
                
                metric.add_batch(gt,pred)
-               PipelineBase.call_hooks(self.after_turn_hooks,iter)
+               PipelineBase.call_hooks(self.on_turn_end,iter)
 
             _acc=metric.Pixel_Accuracy()
             _miou=metric.Mean_Intersection_over_Union()

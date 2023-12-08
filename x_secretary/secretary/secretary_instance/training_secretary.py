@@ -1,4 +1,5 @@
 import logging,os,uuid
+from typing import Any
 from ..secretary_base import Secretary_base
 from ..solo_method import solo_method,solo_chaining_method,solo_method_with_default_return
 import torch.distributed as dist
@@ -116,3 +117,13 @@ class Training_Secretary(Secretary_base):
         if flag:
             self.warning('Offloading is enabled, may impact the training efficiency.')
             offload_module(module_type,net,ratio)
+
+class Record_Loss:
+    def __init__(self,secretary:Training_Secretary) -> None:
+        self.secretary=secretary
+        pass
+
+    def __call__(self, batch_len,batch_id,loss_value,ep) -> Any:
+        avg=self.secretary.record_moving_avg(f'avg_training_loss_{ep}',loss_value,batch_id)
+        self.secretary.print_solo(f'epoch {ep}, {batch_id}/{batch_len}, training loss: {loss_value} - avg: {avg:}',end='\r')
+

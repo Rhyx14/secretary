@@ -30,13 +30,13 @@ class Image_training(PipelineBase):
     }
 
     ---------
-    before_epoch_hooks : hooks before each epoch, with parameter (configuration)
+    on_epoch_begin : hooks before each epoch, with parameter ()
 
-    after_epoch_hooks : hooks after each epoch, with parameter (configuration,loss,ep)
+    on_epoch_end : hooks after each epoch, with parameter (loss,ep)
 
-    before_turn_hooks : hooks before each training turn, with parameter (configuration)
+    on_turn_begin : hooks before each training turn, with parameter ()
 
-    after_turn_hooks : hooks after each training turn, with parameter (configuration,batch_id,loss,ep)
+    on_turn_end : hooks after each training turn, with parameter (batch len,batch_id,loss,ep)
 
     mode: see Image_training2.Mode
     '''
@@ -106,15 +106,15 @@ class Image_training(PipelineBase):
         CFG.net.train()
         
         scaler=GradScaler()
-
+        _batch_len=len(self._dl)
         for ep in range(CFG.EPOCH):
             
-            PipelineBase.call_hooks(self.on_epoch_begin,self._cfg)
+            PipelineBase.call_hooks(self.on_epoch_begin)
             for _b_id,datum in enumerate(self._dl):
 
                 x,y=self._unpack(datum)
 
-                PipelineBase.call_hooks(self.on_turn_begin,self._cfg)
+                PipelineBase.call_hooks(self.on_turn_begin)
                 CFG.opt.zero_grad(set_to_none=True)
 
                 if(mix_precision):
@@ -130,10 +130,10 @@ class Image_training(PipelineBase):
                     _loss = CFG.loss(_out,y)
                     _loss.backward()
                     CFG.opt.step()
-                PipelineBase.call_hooks(self.on_turn_end,self._cfg,_b_id,_loss.item(),ep)
+                PipelineBase.call_hooks(self.on_turn_end,_batch_len,_b_id,_loss.item(),ep)
 
             if hasattr(CFG,'lr_scheduler'):
                 CFG.lr_scheduler.step()
 
-            PipelineBase.call_hooks(self.on_epoch_end,self._cfg,_loss.item(),ep)
+            PipelineBase.call_hooks(self.on_epoch_end,_loss.item(),ep)
         return
