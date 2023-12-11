@@ -158,14 +158,15 @@ class Secretary_base():
     def info_wechat_autodl(self,token,title,name=None,content=None):    
         info_wechat_autodl(token,title,name,content)
 
+
+    _divider={
+        'KB':1024,
+        'MB':1024*1024,
+        'GB':1024*1024*1024,
+        'TB':1024*1024*1024*1024
+    }
     def cuda_VRAM_usage(self,mode='MB'):
-        _divider={
-            'KB':1024,
-            'MB':1024*1024,
-            'GB':1024*1024*1024,
-            'TB':1024*1024*1024*1024
-        }
-        self.info_all(f'{self.LOCAL_RANK} - max cuda memory:{torch.cuda.max_memory_allocated()/_divider[mode]:.3f}{mode}')
+        self.info_all(f'{self.LOCAL_RANK} - maximal CUDA memory usage:{torch.cuda.max_memory_allocated()/Secretary_base._divider[mode]:.3f}{mode}')
         return self
 
     @solo_chaining_method
