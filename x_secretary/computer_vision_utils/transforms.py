@@ -32,12 +32,12 @@ def random_brightness(img:np.ndarray,p=0.5):
 def random_hue(img:np.ndarray,p=0.5):
     return RandomHSV(img,p=p,mode='hue')
 
-def random_bright(im, delta=16,alpha_ths=0.3):
+def random_bright(img, delta=16,alpha_ths=0.3):
     alpha = random.random()
     if alpha > alpha_ths:
-        im = im * alpha + random.randrange(-delta,delta)
-        im = im.clip(min=0,max=255).astype(np.uint8)
-    return im
+        img = img * alpha + random.randrange(-delta,delta)
+        img = img.clip(min=0,max=255).astype(np.uint8)
+    return img
 
 def opencv_to_torchTensor(img:np.ndarray) -> torch.Tensor:
     '''

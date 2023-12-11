@@ -120,7 +120,7 @@ class Image_plain_val(Image_val):
             _loss=self._accelerator.reduce(_loss,reduction='mean').item()
         return _loss
 
-from ..utils.semantic_segmentation.metric import Metric
+from ..computer_vision_utils.semantic_segmentation.metric import Metric
 class Image_segmentation_val(PipelineBase):
     '''
     val pipline for image semantic segmentation

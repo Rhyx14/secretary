@@ -1,18 +1,15 @@
 from torch.utils.data import Dataset
 from pathlib import Path
 import json,torch,cv2
-from torchvision import transforms
+from ..union_transforms import Union_Transforms
 import numpy as np
-from typing import Callable
 class Seg_Dataset(Dataset):
     def __init__(self, 
                 dir,
                 n_class,
-                train=False,
-                json_file='train_val_data.json',
-                union_transform:Callable=None,
-                transform:Callable=None,
-                target_transform:Callable=None):
+                train,
+                json_file,
+                transforms:list):
         """
         Dataset for semantic segmentation task only
 
@@ -44,9 +41,7 @@ class Seg_Dataset(Dataset):
             downsize (int, optional): down size factor. Defaults to 1.
             json_file (str, optional): json file path that contain data path.
 
-            union_transform (callable, optional): transform images and labels simutaineously. Defaults to None. (img,label) -> img, label
-            transform (callable, optional): extra transform. Defaults to None. (img) -> img
-            target_transform (callable, optional): extra transform. Defaults to None. (label) -> img
+            union_transform (list, optional): transform. Defaults to None. (img,label) -> img, label
 
             The squence is: union_transform -> (target) transform.
         """         
@@ -60,9 +55,7 @@ class Seg_Dataset(Dataset):
         self.train_files = tmp['train']
         self.val_files   = tmp['val']
 
-        self.union_transform=union_transform
-        self.transform=transform
-        self.target_transform=target_transform
+        self.union_transform=Union_Transforms(transforms)
         
         if(self.train):
             self.data=self.train_files
@@ -80,17 +73,7 @@ class Seg_Dataset(Dataset):
     def __getitem__(self, idx):
         img,label=self._unpack_img_label(self.data[idx])
 
-        if self.union_transform is not None:
-            if isinstance(self.union_transform,list):
-                for _trans in self.union_transform:
-                    img,label=_trans(img,label)
-            else: 
-                img,label=self.union_transform(img,label)
-
-        if self.transform is not None:
-            img=self.transform(img)
-        if self.target_transform is not None:
-            label=self.target_transform(label)
+        img,label=self.union_transform(img,label)
 
         # create one-hot encoding     
         target = torch.zeros(self.n_class, *label.shape)
