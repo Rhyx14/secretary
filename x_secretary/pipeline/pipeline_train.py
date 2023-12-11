@@ -30,11 +30,11 @@ class Image_training(PipelineBase):
     }
 
     ---------
-    on_epoch_begin : hooks before each epoch, with parameter ()
+    on_epoch_begin : hooks before each epoch, with parameter (ep)
 
     on_epoch_end : hooks after each epoch, with parameter (loss,ep)
 
-    on_turn_begin : hooks before each training turn, with parameter ()
+    on_turn_begin : hooks before each training turn, with parameter (ep, batch_id)
 
     on_turn_end : hooks after each training turn, with parameter (batch len,batch_id,loss,ep)
 
@@ -109,12 +109,12 @@ class Image_training(PipelineBase):
         _batch_len=len(self._dl)
         for ep in range(CFG.EPOCH):
             
-            PipelineBase.call_hooks(self.on_epoch_begin)
+            PipelineBase.call_hooks(self.on_epoch_begin,ep)
             for _b_id,datum in enumerate(self._dl):
 
                 x,y=self._unpack(datum)
 
-                PipelineBase.call_hooks(self.on_turn_begin)
+                PipelineBase.call_hooks(self.on_turn_begin,ep,_b_id)
                 CFG.opt.zero_grad(set_to_none=True)
 
                 if(mix_precision):

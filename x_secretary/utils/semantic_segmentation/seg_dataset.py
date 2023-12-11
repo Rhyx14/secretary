@@ -3,7 +3,7 @@ from pathlib import Path
 import json,torch,cv2
 from torchvision import transforms
 import numpy as np
-
+from .transforms import opencv_to_torchTensor
 class Seg_Dataset(Dataset):
     def __init__(self, 
                 dir,
@@ -62,14 +62,9 @@ class Seg_Dataset(Dataset):
         else:
             self.data=self.val_files
 
-    def _load_img(self,img_path):
+    def _load_img(self,img_path:str):
         img = cv2.imread(str(img_path))
-        img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB) # [h,w,c]
-        # convert to tensor
-        img = torch.from_numpy(img.copy()).float()
-        # [h,w,c] -> [c,h,w]
-        img=img.permute(2,0,1)
-        img=img/255.
+        img = opencv_to_torchTensor(img)
         return img
     
     def _load_label(self,label_path):
@@ -83,9 +78,11 @@ class Seg_Dataset(Dataset):
     def __len__(self):
         return len(self.data)
 
+    def _get_img_label_name(self,idx):
+        return self.data[idx][0],self.data[idx][1]
+
     def __getitem__(self, idx):
-        img_name=self.data[idx][0]
-        label_name=self.data[idx][1]
+        img_name,label_name=self._get_img_label_name(idx)
 
         img= self._load_img(self.dir / img_name)
         label=self._load_label(self.dir/ label_name)
