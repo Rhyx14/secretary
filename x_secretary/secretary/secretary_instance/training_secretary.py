@@ -125,5 +125,6 @@ class Record_Loss:
 
     def __call__(self, batch_len,batch_id,loss_value,ep) -> Any:
         avg=self.secretary.record_moving_avg(f'avg_training_loss_{ep}',loss_value,batch_id)
-        self.secretary.print_solo(f'epoch {ep}, {batch_id}/{batch_len}, training loss: {loss_value} - avg: {avg:}',end='\r')
+        if avg is not None:
+            self.secretary.print_solo(f'epoch {ep}, {batch_id}/{batch_len}, training loss: {loss_value:.5f} - avg: {avg:.10f}',end='\r')
 

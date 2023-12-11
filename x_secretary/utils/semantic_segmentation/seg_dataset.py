@@ -3,16 +3,16 @@ from pathlib import Path
 import json,torch,cv2
 from torchvision import transforms
 import numpy as np
-from .transforms import opencv_to_torchTensor
+from typing import Callable
 class Seg_Dataset(Dataset):
     def __init__(self, 
                 dir,
                 n_class,
                 train=False,
                 json_file='train_val_data.json',
-                union_transform=None,
-                transform=None,
-                target_transform=None):
+                union_transform:Callable=None,
+                transform:Callable=None,
+                target_transform:Callable=None):
         """
         Dataset for semantic segmentation task only
 
@@ -23,15 +23,18 @@ class Seg_Dataset(Dataset):
                 3. a json file contains the path of each sample, such as 
                     {
                         'train':[
-                            {'img': path/to/img, 'label': path/to/label},
-                            {'img': path/to/img, 'label': path/to/label},
+                            datum // any obj,
+                            datum // any obj,
                             ...
                         ],
                         'val:':[
-                            {'img': path/to/img, 'label': path/to/label},
+                            datum // any obj,
                             ...
                         ]
                     }
+                The inner dict may varies from different datasets. It's always necessitates an override of method: self._unpack_img_label(self,datum).
+                The default method suppose the datum in the formate as:
+                    ['relative/str/path/to/image','relative/str/path/to/label']
 
             n_class (_type_): number of classes,
             train (bool, optional): train / val mode. Defaults to False.
@@ -40,9 +43,13 @@ class Seg_Dataset(Dataset):
             rot_rate (float, optional): augmentation, rotate 90 degree. Defaults to 0.5.
             downsize (int, optional): down size factor. Defaults to 1.
             json_file (str, optional): json file path that contain data path.
-            transform (_type_, optional): extra transform. Defaults to None.
-            target_transform (_type_, optional): extra transform. Defaults to None.
-        """        
+
+            union_transform (callable, optional): transform images and labels simutaineously. Defaults to None. (img,label) -> img, label
+            transform (callable, optional): extra transform. Defaults to None. (img) -> img
+            target_transform (callable, optional): extra transform. Defaults to None. (label) -> img
+
+            The squence is: union_transform -> (target) transform.
+        """         
         super(Seg_Dataset,self).__init__()
         self.train=train
         self.dir=Path(dir)
@@ -62,30 +69,16 @@ class Seg_Dataset(Dataset):
         else:
             self.data=self.val_files
 
-    def _load_img(self,img_path:str):
-        img = cv2.imread(str(img_path))
-        img = opencv_to_torchTensor(img)
-        return img
-    
-    def _load_label(self,label_path):
-        label = cv2.imread(str(label_path))
-        # convert to tensor
-        label = torch.from_numpy(label.copy()).long()
-        # [h,w,c] -> [c,h,w] -> [h,w]
-        label=label.permute(2,0,1)[0]
-        return label
-
     def __len__(self):
         return len(self.data)
 
-    def _get_img_label_name(self,idx):
-        return self.data[idx][0],self.data[idx][1]
+    def _unpack_img_label(self,datum):
+        img = cv2.imread(str(self.dir / datum[0]))
+        label= cv2.imread(str(self.dir / datum[1]))
+        return img,label
 
     def __getitem__(self, idx):
-        img_name,label_name=self._get_img_label_name(idx)
-
-        img= self._load_img(self.dir / img_name)
-        label=self._load_label(self.dir/ label_name)
+        img,label=self._unpack_img_label(self.data[idx])
 
         if self.union_transform is not None:
             if isinstance(self.union_transform,list):

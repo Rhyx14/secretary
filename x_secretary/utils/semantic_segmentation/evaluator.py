@@ -23,7 +23,7 @@ class EvaluatorBase:
 
     def _load_img(self,img_path):
         img = cv2.imread(str(img_path))
-        return EvaluatorBase.opencv_to_tensor(img)
+        return img
 
     def get_pred(self,img:np.ndarray) -> torch.Tensor:
         """

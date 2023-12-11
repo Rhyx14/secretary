@@ -165,7 +165,7 @@ class Secretary_base():
             'GB':1024*1024*1024,
             'TB':1024*1024*1024*1024
         }
-        self.info_all(f'max cuda memory:{torch.cuda.max_memory_allocated()/_divider[mode]:.3f}{mode}')
+        self.info_all(f'{self.LOCAL_RANK} - max cuda memory:{torch.cuda.max_memory_allocated()/_divider[mode]:.3f}{mode}')
         return self
 
     @solo_chaining_method

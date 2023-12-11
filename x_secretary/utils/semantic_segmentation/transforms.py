@@ -62,3 +62,10 @@ def opencv_to_torchTensor(img:numpy.ndarray) -> torch.Tensor:
     img=img.permute(2,0,1)
     img=img/255.
     return img
+
+def opencv_label_to_torchTensor(label: numpy.ndarray) -> torch.Tensor:
+    # convert to tensor
+    label = torch.from_numpy(label.copy()).long()
+    # [h,w,c] -> [c,h,w] -> [h,w]
+    label=label.permute(2,0,1)[0]
+    return label
