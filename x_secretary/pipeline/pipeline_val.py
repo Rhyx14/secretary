@@ -6,10 +6,10 @@ from tqdm import tqdm
 import torch.distributed as dist
 
 def DDP_progressbar(iterator):
-    if dist.is_torchelastic_launched() and dist.get_rank()==0:
-        return tqdm(iterator,leave=False)
-    else:
+    if dist.is_torchelastic_launched() and dist.get_rank()!=0:
         return iterator
+    else:
+        return tqdm(iterator,leave=False)
     
 class Image_val(PipelineBase):
     '''

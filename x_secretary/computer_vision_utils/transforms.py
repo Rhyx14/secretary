@@ -6,7 +6,7 @@ from torchvision import transforms
 from .random_function import random_function
 
 @random_function
-def randomBlur(img,p=0.5):
+def blur(img,p=0.5):
     img = cv2.blur(img,(5,5))
     return img
 
@@ -32,16 +32,9 @@ def random_brightness(img:np.ndarray,p=0.5):
 def random_hue(img:np.ndarray,p=0.5):
     return RandomHSV(img,p=p,mode='hue')
 
-def random_bright(img, delta=16,alpha_ths=0.3):
-    alpha = random.random()
-    if alpha > alpha_ths:
-        img = img * alpha + random.randrange(-delta,delta)
-        img = img.clip(min=0,max=255).astype(np.uint8)
-    return img
-
 def opencv_to_torchTensor(img:np.ndarray) -> torch.Tensor:
     '''
-    From opencv images [h,w,c] to pytorch tensor [c,h,w]
+    From opencv images [h,w,c] (BGR) to pytorch tensor [c,h,w] (RGB)
     
     [0-255] -> [0.,1.]
     '''
