@@ -28,6 +28,10 @@ class Union_Transforms():
             self._list=[]
         else:
             self._list=transform_list
+    
+    @property
+    def transforms(self):
+        return self._list
 
     def __call__(self, *args: Any) -> Any:
         _args=list(args)
