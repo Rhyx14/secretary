@@ -3,7 +3,7 @@ import numpy as np
 import torch
 
 
-def set_seed(seed,determinstic=False):
+def set_seed(seed,determinstic=True):
     '''
     set random seed of torch, numpy and random
     '''

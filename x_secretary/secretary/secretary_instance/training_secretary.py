@@ -107,7 +107,7 @@ class Training_Secretary(Secretary_base):
                 torch.save(_net.state_dict(),path)
                 self.logger.info(f'saved at {path}')
 
-        self.data_recorder.save(self.SAVED_DIR)
+        self._data.save(self.SAVED_DIR)
         return self
 
     def offload_module(self,flag, module_type, net, ratio=0):
@@ -118,13 +118,15 @@ class Training_Secretary(Secretary_base):
             self.warning('Offloading is enabled, may impact the training efficiency.')
             offload_module(module_type,net,ratio)
 
+from ...data_recorder import Avg
 class Record_Loss:
-    def __init__(self,secretary:Training_Secretary) -> None:
-        self.secretary=secretary
+    def __init__(self,secretary:Training_Secretary,name_prefix='') -> None:
+        self._secretary=secretary
+        self._name_prefix=name_prefix
         pass
 
-    def __call__(self, batch_len,batch_id,loss_value,ep) -> Any:
-        avg=self.secretary.record_moving_avg(f'avg_training_loss_{ep}',loss_value,batch_id)
-        if avg is not None:
-            self.secretary.print_solo(f'epoch {ep}, {batch_id}/{batch_len}, training loss: {loss_value:.5f} - avg: {avg:.10f}',end='\r')
+    def __call__(self, batch_len,batch_id,loss_value,epochs) -> Any:
+        _key=Avg(f'{self._name_prefix}_training_loss_{epochs}',step=batch_id)
+        self._secretary.data[_key]=loss_value
+        self._secretary.print_solo(f'Epoch {epochs}: {batch_id}/{batch_len}, training loss: {loss_value:.5f} - avg: {self._secretary.data[_key]:.10f}',end='\r')
 
