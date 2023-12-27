@@ -5,7 +5,7 @@ import torch.distributed as dist
 from typing import Any, Union
 import re
 class Configuration():
-    def __init__(self,auto_record=False) -> None:
+    def __init__(self,init_dict:dict=None,auto_record:bool=True) -> None:
         self._auto_record=auto_record
         self._change_set=set()
         
@@ -14,7 +14,9 @@ class Configuration():
 
         # check whether this process is elastic launched, mostly for ddp training
         self.DDP=dist.is_torchelastic_launched()
-        pass
+
+        if init_dict is not None:
+            self.update(init_dict) 
 
     def update(self,params:dict):
         for k,v in params.items():

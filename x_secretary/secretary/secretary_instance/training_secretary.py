@@ -26,11 +26,12 @@ class Training_Secretary(Secretary_base):
         self.logger=logging.getLogger(name_prefix)
         self.logger.setLevel(logging_level)
         self._add_logger_file_handler(self.SAVED_DIR/'log.txt')
-
-        self._print_env()
+        
+        # 打印环境信息
+        self._log_env()
 
     @solo_method
-    def _print_env(self):
+    def _log_env(self):
         '''
         ouput the environment
 
@@ -38,7 +39,6 @@ class Training_Secretary(Secretary_base):
         '''
         # print(cfg_str)
         with open(self.SAVED_DIR/'env.txt','w') as f:
-            # 打印环境信息
             f.write(get_sys_info())
 
     @solo_chaining_method
@@ -53,6 +53,7 @@ class Training_Secretary(Secretary_base):
             if not isinstance(s,str):
                 s=s()
             f.write(s)
+            f.write('\n')
         return self
     
     def _add_logger_file_handler(self,path):
