@@ -3,6 +3,7 @@ import torch
 import argparse
 import torch.distributed as dist
 from typing import Any, Union
+import toml
 import re
 class Configuration():
     def __init__(self,init_dict:dict=None,auto_record:bool=True) -> None:
@@ -103,6 +104,13 @@ class Configuration():
             self._change_set.add(__name)
         self.__dict__[__name]=__value
         pass
+
+    def load(self,path):
+        '''
+        load configurations from a toml file 
+        '''
+        with open(str(path),'r') as f:
+            self.update(toml.load(f))
 
     def reset_records(self):
         '''

@@ -14,19 +14,20 @@ from ..data_recorder import data_recorder
 from ..deprecated import deprecated
 class Secretary_base():
 
-    def __init__(self,saved_dir:Path,distributed) -> None:
+    def __init__(self,saved_dir:Path) -> None:
         
         # default objects
         self.logger=logging.getLogger("secretary")
         self.time_stamps=None
         self._data=data_recorder()
-        self.stages_list=[]
+        self._stages_list=[]
         
-        self.distributed=distributed
-        if(self.distributed):
-            self.LOCAL_RANK=dist.get_rank()        
+        if(dist.is_torchelastic_launched()):
+            self.LOCAL_RANK=dist.get_rank()
+            self._distributed=True       
         else:
             self.LOCAL_RANK=0
+            self._distributed=False
         
         self.SAVED_DIR=saved_dir
 
@@ -97,7 +98,7 @@ class Secretary_base():
         return self
 
     def sync(self):
-        if(self.distributed):
+        if(self._distributed):
             dist.barrier()
     
     def load_json(self,filename):
@@ -115,7 +116,7 @@ class Secretary_base():
     @solo_chaining_method
     def save_record(self):
         '''
-        save recorded data (solo) -> self
+        save recorded data in self._data_recorder (solo) -> self
         '''
         self._data.save(self.SAVED_DIR)
         return self
@@ -149,16 +150,21 @@ class Secretary_base():
             self.time_stamps=now
         return self
 
-    def register_stage(self,priority,pre_acts=[],post_acts=[],name='default'):
+    def register_stage(self,priority=-1,pre_acts=[],post_acts=[],env_obj=None):
         '''
         添加执行阶段,根据prioirity顺序(由小到大)执行。
         after_actions: 该阶段完成后执行的动作
         '''
         def outter(f,*args,**kwargs):
-            self.stages_list.append([
+            
+            # 未指定优先级则自动添加（最低优先级）
+            if priority == -1:
+                priority=len(self._stages_list)+1
+
+            self._stages_list.append([
                 priority,
-                name,
-                [*pre_acts,f,*post_acts]
+                [*pre_acts,f,*post_acts],
+                env_obj
             ])
             def inner():
                 f(*args,**kwargs)
@@ -169,7 +175,9 @@ class Secretary_base():
         '''
         执行已注册的训练阶段
         '''
-        self.stages_list.sort(key=lambda x: x[0])
-        for _,_,stages in self.stages_list:
+        self._stages_list.sort(key=lambda x: x[0])
+        self.stage_env=
+        for _,stages,_stages_env in self._stages_list:
             for func in stages:
+                self.stage_env=_stages_env
                 func()

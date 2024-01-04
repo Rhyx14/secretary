@@ -8,6 +8,7 @@ from ...utils.log_dir import Log_dir
 import torch
 from pathlib import Path
 from ...utils.faster_save_on_cpu import offload_module,restore_offload
+from ...configuration import Configuration
 class Training_Secretary(Secretary_base):
     def __init__(self,distributed=False,saved_dir='.',name_prefix='Train_Secretary',logging_level=logging.INFO) -> None:
         super().__init__(Path(saved_dir),distributed)
@@ -50,12 +51,29 @@ class Training_Secretary(Secretary_base):
         '''
         with open(self.SAVED_DIR/'configuration.txt','a') as f:
             f.write(prefix)
+            f.write('\n')
             if not isinstance(s,str):
                 s=s()
             f.write(s)
             f.write('\n')
         return self
     
+    @solo_chaining_method
+    def log_cfg_changes(self,cfg:Configuration,name='',reset=True):
+        '''
+        log string to the changes of configuration objects,
+
+        note that this function is only suitable for the Stage Mode
+        '''
+        with open(self.SAVED_DIR/'configuration.txt','a') as f:
+            f.write(name+'\n')
+            if reset:
+                f.write(cfg.get_records_str())
+            else:
+                f.write(cfg.get_records_str_and_reset())
+            f.write('\n')
+        return self
+        
     def _add_logger_file_handler(self,path):
         if hasattr(self,'_logger_filehandler'):
             self.logger.removeHandler(self._logger_filehandler)

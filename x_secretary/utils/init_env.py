@@ -3,7 +3,7 @@ import torch
 import torch.distributed as distributed
 from ..deprecated import deprecated 
 
-def init_cuda(cuda_devices,ddp=False,tf32=False):
+def init_cuda(cuda_devices,tf32=False):
     '''
     setting cuda devices and environment.
 
@@ -22,7 +22,7 @@ def init_cuda(cuda_devices,ddp=False,tf32=False):
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
 
-    if(ddp):
+    if(distributed.is_torchelastic_launched()):
         distributed.init_process_group(backend='nccl')
         LOCAL_RANK=distributed.get_rank()
         WORLD_SIZE=distributed.get_world_size()
