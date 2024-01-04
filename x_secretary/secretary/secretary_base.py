@@ -14,13 +14,15 @@ from ..data_recorder import data_recorder
 from ..deprecated import deprecated
 class Secretary_base():
 
-    def __init__(self,saved_dir:Path) -> None:
+    def __init__(self,working_dir:Path,logger_name:str='secretary',logging_level=logging.INFO) -> None:
         
         # default objects
-        self.logger=logging.getLogger("secretary")
-        self.time_stamps=None
+        self._logger=logging.getLogger(logger_name)
+        self._logger.setLevel(logging_level)
+        self._time_stamps=None
         self._data=data_recorder()
         self._stages_list=[]
+        self.stage_env=None
         
         if(dist.is_torchelastic_launched()):
             self.LOCAL_RANK=dist.get_rank()
@@ -29,8 +31,11 @@ class Secretary_base():
             self.LOCAL_RANK=0
             self._distributed=False
         
-        self.SAVED_DIR=saved_dir
+        self._working_dir=working_dir
 
+    @property
+    def logger(self):
+        return self._logger
 
     @solo_chaining_method
     def print_solo(self,str,**kwargs):
@@ -44,7 +49,7 @@ class Secretary_base():
         '''
         logger debug (tutti)
         '''
-        self.logger.debug(msg)
+        self._logger.debug(msg)
 
     @solo_method
     def solo(self,callable,*args,**kwargs):
@@ -58,14 +63,14 @@ class Secretary_base():
         '''
         log information (solo) -> self
         '''
-        self.logger.info(msg)
+        self._logger.info(msg)
         return self
 
     def info_all(self,msg):
         '''
         log information (tutti) -> self
         '''
-        self.logger.info(msg)
+        self._logger.info(msg)
         return self
     
     @solo_chaining_method
@@ -73,14 +78,14 @@ class Secretary_base():
         '''
         log warning (solo) -> self
         '''
-        self.logger.warning(msg)
+        self._logger.warning(msg)
         return self
 
     def warning_all(self,msg):
         '''
         log warning (tutti) -> self
         '''
-        self.logger.warning(msg)
+        self._logger.warning(msg)
         return self
 # ------------------------------- data record -------------------------------
     @property
@@ -93,7 +98,7 @@ class Secretary_base():
         '''
         dump to json file (solo)
         '''
-        with open(self.SAVED_DIR/filename,'w') as f:
+        with open(self._working_dir/filename,'w') as f:
             json.dump(obj,f)
         return self
 
@@ -105,20 +110,20 @@ class Secretary_base():
         '''
         load from json file (tutti)
         '''
-        return json.load(open(self.SAVED_DIR/filename,'r'))
+        return json.load(open(self._working_dir/filename,'r'))
 
     def exist(self,filename):
         '''
         check file existence (tutti)
         '''
-        return os.path.exists(self.SAVED_DIR/filename)
+        return os.path.exists(self._working_dir/filename)
     
     @solo_chaining_method
     def save_record(self):
         '''
         save recorded data in self._data_recorder (solo) -> self
         '''
-        self._data.save(self.SAVED_DIR)
+        self._data.save(self._working_dir)
         return self
 
     @solo_method
@@ -141,13 +146,13 @@ class Secretary_base():
         '''
         计算时间间隔 (solo) -> self
         '''
-        if self.time_stamps is None:
-            self.time_stamps=datetime.datetime.now()
+        if self._time_stamps is None:
+            self._time_stamps=datetime.datetime.now()
         else:
             now=datetime.datetime.now()
-            span=now-self.time_stamps
-            self.logger.info(f'span === {str(span)}')
-            self.time_stamps=now
+            span=now-self._time_stamps
+            self._logger.info(f'span === {str(span)}')
+            self._time_stamps=now
         return self
 
     def register_stage(self,priority=-1,pre_acts=[],post_acts=[],env_obj=None):
@@ -159,10 +164,12 @@ class Secretary_base():
             
             # 未指定优先级则自动添加（最低优先级）
             if priority == -1:
-                priority=len(self._stages_list)+1
+                _priority=len(self._stages_list)+1
+            else:
+                _priority=priority
 
             self._stages_list.append([
-                priority,
+                _priority,
                 [*pre_acts,f,*post_acts],
                 env_obj
             ])
@@ -176,7 +183,6 @@ class Secretary_base():
         执行已注册的训练阶段
         '''
         self._stages_list.sort(key=lambda x: x[0])
-        self.stage_env=
         for _,stages,_stages_env in self._stages_list:
             for func in stages:
                 self.stage_env=_stages_env

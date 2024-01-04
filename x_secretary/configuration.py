@@ -1,4 +1,4 @@
-import os
+import os,logging,sys
 import torch
 import argparse
 import torch.distributed as dist
@@ -6,9 +6,18 @@ from typing import Any, Union
 import toml
 import re
 class Configuration():
-    def __init__(self,init_dict:dict=None,auto_record:bool=True) -> None:
+    def __init__(self,init_dict:dict=None,auto_record:bool=True,logger=None) -> None:
         self._auto_record=auto_record
         self._change_set=set()
+
+        if logger is None:
+            self.logger=logging.getLogger('CONFIGURATION')
+            self.logger.setLevel(logging.INFO)
+            _logger_handler=logging.StreamHandler(sys.stdout)
+            _logger_handler.setFormatter(logging.Formatter('%(asctime)s-[%(name)s] %(message)s'))
+            self.logger.addHandler(_logger_handler)
+        else:
+            self.logger=logger
         
         self._parser=argparse.ArgumentParser()
         self.NAME='default'
@@ -18,6 +27,9 @@ class Configuration():
 
         if init_dict is not None:
             self.update(init_dict) 
+
+    def set_logger(self,logger):
+        self.logger=logger
 
     def update(self,params:dict):
         for k,v in params.items():
@@ -31,12 +43,12 @@ class Configuration():
         self.__setattr__(name,value)
         return value
     
-    def load_weight(self,net:torch.nn.Module,strict=False,weight_key='PRE_TRAIN',path=None,include=None,exclude=None):
+    def load_weight(self,net:torch.nn.Module,strict=False,weight_dict=None,path=None,include=None,exclude=None):
         """Load weight of networks.
 
         If 'path' is given, load the weight from the path.
         
-        else if 'weight_key' is given, load the configuration[weight_key].
+        else if 'weight_dict' is given, load the dict directly.
 
         'include' means only specific layers are loaded.
 
@@ -56,10 +68,11 @@ class Configuration():
         _weight:dict=None
         if path is not None:
             _weight=torch.load(path,map_location='cpu')
-            self.__setattr__(weight_key,str(path))
+            self.logger.info(f"Loading weight from {path}.")
             
-        elif hasattr(self,weight_key):
-            _weight=torch.load(self.__dict__[weight_key],map_location='cpu')
+        elif hasattr(self,weight_dict):
+            _weight=torch.load(weight_dict,map_location='cpu')
+            self.logger.info("Direct loading weight for dict object.")
         
         if _weight is not None:
             if include !=None and exclude !=None:
@@ -83,9 +96,8 @@ class Configuration():
                             del _weight[_key]
             
             net.load_state_dict(_weight,strict=strict)
-
-        else:
-            print(f'No desginated path, and such weight file: {weight_key}')
+            self.logger.info(f"Loading weight from {path}, including: {include}, excluding: {exclude}")
+            
         return self
     
     def __str__(self) -> str:

@@ -10,24 +10,19 @@ from pathlib import Path
 from ...utils.faster_save_on_cpu import offload_module,restore_offload
 from ...configuration import Configuration
 class Training_Secretary(Secretary_base):
-    def __init__(self,distributed=False,saved_dir='.',name_prefix='Train_Secretary',logging_level=logging.INFO) -> None:
-        super().__init__(Path(saved_dir),distributed)
+    def __init__(self,saved_dir='.',name_prefix='Training_Secretary',logging_level=logging.INFO) -> None:
+        super().__init__(Path(saved_dir),logger_name=name_prefix,logging_level=logging_level)
 
         # create folder
         self.Log_dir=Log_dir(
             str(uuid.uuid1()),
-            root_path=self.SAVED_DIR,
-            distributed=self.distributed
+            root_path=self._working_dir,
+            distributed=self._distributed
         ).create_dir()
-        self.SAVED_DIR=self.Log_dir.saved_dir
 
         # 保存日志
-        self._logging_level=logging_level
-        logging.basicConfig(level=logging.INFO,format='%(asctime)s-[%(name)s] %(message)s')
-        self.logger=logging.getLogger(name_prefix)
-        self.logger.setLevel(logging_level)
-        self._add_logger_file_handler(self.SAVED_DIR/'log.txt')
-        
+        self._add_logger_file_handler(self._working_dir/'log.txt',logging_level)
+
         # 打印环境信息
         self._log_env()
 
@@ -39,7 +34,7 @@ class Training_Secretary(Secretary_base):
         saving to 'env.txt' 
         '''
         # print(cfg_str)
-        with open(self.SAVED_DIR/'env.txt','w') as f:
+        with open(self._working_dir/'env.txt','w') as f:
             f.write(get_sys_info())
 
     @solo_chaining_method
@@ -49,7 +44,7 @@ class Training_Secretary(Secretary_base):
 
         s should be str or callable object 
         '''
-        with open(self.SAVED_DIR/'configuration.txt','a') as f:
+        with open(self._working_dir/'configuration.txt','a') as f:
             f.write(prefix)
             f.write('\n')
             if not isinstance(s,str):
@@ -65,7 +60,7 @@ class Training_Secretary(Secretary_base):
 
         note that this function is only suitable for the Stage Mode
         '''
-        with open(self.SAVED_DIR/'configuration.txt','a') as f:
+        with open(self._working_dir/'configuration.txt','a') as f:
             f.write(name+'\n')
             if reset:
                 f.write(cfg.get_records_str())
@@ -74,20 +69,20 @@ class Training_Secretary(Secretary_base):
             f.write('\n')
         return self
         
-    def _add_logger_file_handler(self,path):
+    def _add_logger_file_handler(self,path,level):
         if hasattr(self,'_logger_filehandler'):
             self.logger.removeHandler(self._logger_filehandler)
         self._logger_filehandler=logging.FileHandler(path)
         self._logger_filehandler.setFormatter(logging.Formatter('%(asctime)s-[%(name)s] %(message)s'))
         self._logger_filehandler.setLevel(logging.INFO)
-        self.logger.addHandler(self._logger_filehandler)
+        self._logger.addHandler(self._logger_filehandler)
         pass
         
     def set_name_prefix(self,name_prefix):
         self.Log_dir.change_name(Log_dir.time_suffix_name(name_prefix))
-        self.logger.name=name_prefix
-        self.SAVED_DIR=self.Log_dir.saved_dir
-        self._add_logger_file_handler(self.SAVED_DIR / 'log.txt')
+        self._logger.name=name_prefix
+        self._working_dir=self.Log_dir.saved_dir
+        self._add_logger_file_handler(self._working_dir / 'log.txt')
         return self
     
     @solo_chaining_method
@@ -104,7 +99,7 @@ class Training_Secretary(Secretary_base):
             else:
                 _net=net
 
-            path=os.path.join(self.SAVED_DIR,file_name)
+            path=os.path.join(self._working_dir,file_name)
 
             if best_mode:
 
@@ -126,7 +121,7 @@ class Training_Secretary(Secretary_base):
                 torch.save(_net.state_dict(),path)
                 self.logger.info(f'saved at {path}')
 
-        self._data.save(self.SAVED_DIR)
+        self._data.save(self._working_dir)
         return self
 
     def offload_module(self,flag, module_type, net, ratio=0):
