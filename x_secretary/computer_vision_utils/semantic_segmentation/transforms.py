@@ -1,7 +1,7 @@
 import torch,numpy
 from torchvision import transforms
 import cv2 
-
+import numpy as np
 def flip_segmentation(img,label,p):
     '''
     Horizonal Flip at possibility P
@@ -10,6 +10,18 @@ def flip_segmentation(img,label,p):
         img=torch.flip(img,[-1])
         label=torch.flip(label,[-1])
     return img,label
+
+def extract_segmentation(img,label,stride=2):
+    '''
+    select pixels with certain stride
+    '''
+    if img is np.ndarray:
+        _img=img[::stride,::stride,:] # [h w c]
+    else:
+        _img=img[:,::stride,::stride] # [c h w]
+    _label=label[::stride,::stride] # [h w]
+    return _img,_label
+
 
 def rot90_segmentation(img,label,p):
     '''

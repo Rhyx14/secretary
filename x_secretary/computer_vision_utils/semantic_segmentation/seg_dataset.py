@@ -68,6 +68,8 @@ class Seg_Dataset(Dataset):
     def _unpack_img_label(self,datum):
         img = cv2.imread(str(self.dir / datum[0]))
         label= cv2.imread(str(self.dir / datum[1]))
+        assert img is not None
+        assert label is not None 
         return img,label
 
     def __getitem__(self, idx):
@@ -76,11 +78,11 @@ class Seg_Dataset(Dataset):
         img,label=self.union_transform(img,label)
 
         # create one-hot encoding     
-        target = torch.zeros(self.n_class, *label.shape)
-        for c in range(self.n_class):
-            target[c][label == c] = 1
+        # target = torch.zeros(self.n_class, *label.shape)
+        # for c in range(self.n_class):
+        #     target[c][label == c] = 1
 
-        sample = {'X': img, 'Y': target, 'l': label}
+        sample = {'X': img, 'Y': label}
 
         return sample
 

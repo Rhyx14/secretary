@@ -6,3 +6,4 @@ secretary.egg-info/
 *.egg-info/
 test*.py
 test/
+Todo.md

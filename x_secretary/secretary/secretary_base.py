@@ -18,7 +18,15 @@ class Secretary_base():
         
         # default objects
         self._logger=logging.getLogger(logger_name)
+        self._logging_level=logging_level
         self._logger.setLevel(logging_level)
+        self._default_logging_formatter=logging.Formatter('%(asctime)s-[%(name)s] %(message)s')
+
+        _ch=logging.StreamHandler()
+        _ch.setLevel(self._logging_level)
+        _ch.setFormatter(self._default_logging_formatter)
+        self._logger.addHandler(_ch)
+
         self._time_stamps=None
         self._data=data_recorder()
         self._stages_list=[]

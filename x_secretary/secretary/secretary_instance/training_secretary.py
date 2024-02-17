@@ -73,8 +73,8 @@ class Training_Secretary(Secretary_base):
         if hasattr(self,'_logger_filehandler'):
             self.logger.removeHandler(self._logger_filehandler)
         self._logger_filehandler=logging.FileHandler(path)
-        self._logger_filehandler.setFormatter(logging.Formatter('%(asctime)s-[%(name)s] %(message)s'))
-        self._logger_filehandler.setLevel(logging.INFO)
+        self._logger_filehandler.setFormatter(self._default_logging_formatter)
+        self._logger_filehandler.setLevel(self._logging_level)
         self._logger.addHandler(self._logger_filehandler)
         pass
         
@@ -82,7 +82,7 @@ class Training_Secretary(Secretary_base):
         self.Log_dir.change_name(Log_dir.time_suffix_name(name_prefix))
         self._logger.name=name_prefix
         self._working_dir=self.Log_dir.saved_dir
-        self._add_logger_file_handler(self._working_dir / 'log.txt')
+        self._add_logger_file_handler(self._working_dir / 'log.txt',self._logging_level)
         return self
     
     @solo_chaining_method

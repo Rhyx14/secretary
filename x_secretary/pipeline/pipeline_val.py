@@ -164,7 +164,7 @@ class Image_segmentation_val(PipelineBase):
         with torch.no_grad():
             for iter, datum in enumerate(tqdm(dl,leave=False)):
                inputs = datum['X'].to(self.cuda_device)
-               gt=datum['l'].cpu().numpy()
+               gt=datum['Y'].cpu().numpy()
 
                # simulate snn
                PipelineBase.call_hooks(self.on_turn_begin)
