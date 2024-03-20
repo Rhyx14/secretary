@@ -2,8 +2,6 @@ from typing import Any
 from .detection_dataset import Dectection_Dataset
 import torch
 from tqdm import tqdm
-from itertools import product
-from .nms import nms
 from .metric import eval
 from collections import defaultdict
 class Img_Info_Hooks():
@@ -66,55 +64,16 @@ class Detection_Evaluator():
 
         return result
 
-    def _decoder(self,pred):
-        '''
-        pred (tensor) [1,G,G,30]
-        return (tensor) box[[x1,y1,x2,y2]] label[...]
-        '''
+    def _decoder(self,pred) -> list[ list[tuple,tuple,int,float]]:
+        """_summary_
 
-        grid_num = 14
-        
-        boxes=[]
-        category=[]
-        probs = []
+        Args:
+            pred (_type_): _description_
 
-        cell_size = 1./grid_num
+        Raises:
+            NotImplementedError: _description_
 
-        pred=pred.squeeze(0) # -> [G,G,30]
-        contain1 = pred[:,:,4].unsqueeze(2) # confidence of box1 [G,G,1]
-        contain2 = pred[:,:,9].unsqueeze(2) # confidence of box2 [G,G,1]
-        contain = torch.cat((contain1,contain2),2) # [G,G,2]
-        mask1 = contain > 0.1 #大于阈值
-        mask2 = (contain==contain.max()) #we always select the best contain_prob what ever it>0.9
-        mask = (mask1+mask2).gt(0) # still [G,G,2], equivalent to 1 means selected bbox
-
-        for i,j,b in product(range(grid_num),range(grid_num),range(2)):  # for 2 bbox in the output
-            if mask[i,j,b] == 1: # if the selected
-                box = pred[i,j,b*5:b*5+4] # [4] 
-                contain_prob = torch.FloatTensor([pred[i,j,b*5+4]]) # confidence
-
-                xy = torch.FloatTensor([j,i])*cell_size #cell左上角  up left of cell
-                box[:2] = box[:2]*cell_size + xy # 获取box 的x,y关于整个图像的坐标，return cxcy relative to image, 即框中心点的坐标
-
-                box_xy = torch.FloatTensor(4) #转换成xy形式（关于图像的左上右下bbox表示） convert[cx,cy,w,h] to [x1,y1,x2,y2]
-                box_xy[:2] = box[:2] - 0.5*box[2:]
-                box_xy[2:] = box[:2] + 0.5*box[2:]
-
-                # TODO 可优化，不用tensor运算
-                max_prob,cls_index = torch.max(pred[i,j,10:],0)
-                if float((contain_prob*max_prob)[0]) > 0.1:
-                    boxes.append(box_xy.view(1,4))
-                    category.append(cls_index)
-                    probs.append(contain_prob*max_prob)
-
-        if len(boxes) ==0:
-            boxes = torch.zeros((1,4))
-            probs = torch.zeros(1)
-            category = torch.zeros(1)
-        else:
-            boxes = torch.cat(boxes,0) #(n,4)
-            probs = torch.cat(probs,0) #(n,)
-            category= torch.Tensor(category)
-            # cls_indexs = torch.cat(cls_indexs,0) #(n,)
-        keep = nms(boxes,probs)
-        return boxes[keep],category[keep],probs[keep]
+        Returns:
+            list[ list[tuple,tuple,int,float]]: return lefttop coordinate, right bottom coordinate
+        """
+        raise NotImplementedError
