@@ -21,7 +21,7 @@ class Training_Secretary(Secretary_base):
         ).create_dir()
 
         # 保存日志
-        self._add_logger_file_handler(self._working_dir/'log.txt',logging_level)
+        self._add_logger_file_handler(self.Log_dir.dir()/'log.txt',logging_level)
 
         # 打印环境信息
         self._log_env()
@@ -34,7 +34,7 @@ class Training_Secretary(Secretary_base):
         saving to 'env.txt' 
         '''
         # print(cfg_str)
-        with open(self._working_dir/'env.txt','w') as f:
+        with open(self.Log_dir.dir()/'env.txt','w') as f:
             f.write(get_sys_info())
 
     @solo_chaining_method

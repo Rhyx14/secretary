@@ -23,6 +23,12 @@ class Log_dir:
             self.world_size=dist.get_world_size()
         pass
 
+    def dir(self):
+        return Path(self.saved_dir)
+    
+    def dir_str(self):
+        return self.saved_dir
+
     def create_dir(self):
         if(self.distributed):
             import torch.distributed as dist
