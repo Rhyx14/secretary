@@ -2,6 +2,16 @@ import torch
 import os
 from typing import Any
 from contextlib import contextmanager
+
+from tqdm import tqdm
+import torch.distributed as dist
+def DDP_progressbar(iterator):
+    if dist.is_torchelastic_launched() and dist.get_rank()!=0:
+        return iterator
+    else:
+        return tqdm(iterator,leave=False)
+    
+
 class PipelineBase():
     def __init__(self,default_device='cpu') -> None:
         self.default_device=default_device
@@ -12,6 +22,12 @@ class PipelineBase():
 
     def _unpack_cls(self,datum):
         return datum[0].to(self.default_device),datum[1].to(self.default_device)
+    
+    def _unpack(self,datum):
+        '''
+        unpack data out from the dataloader, default setting is for classification task (return (x, label), then to the device) 
+        '''
+        return self._unpack_cls(datum)
     
     def Run(self,*args,**kwds):
         raise NotImplementedError

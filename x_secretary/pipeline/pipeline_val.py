@@ -1,19 +1,11 @@
 import torch
-from .pipeline_base import PipelineBase
+from .pipeline_base import PipelineBase,DDP_progressbar
 from torch.utils.data.dataloader import DataLoader
 from torch.cuda.amp import autocast
-from tqdm import tqdm
-import torch.distributed as dist
 
-def DDP_progressbar(iterator):
-    if dist.is_torchelastic_launched() and dist.get_rank()!=0:
-        return iterator
-    else:
-        return tqdm(iterator,leave=False)
-    
 class Image_val(PipelineBase):
     '''
-    val pipline for image semantic segmentation
+    val pipline for image classification
 
     on_turn_begin : hooks before each training turn, with parameter ()
 
