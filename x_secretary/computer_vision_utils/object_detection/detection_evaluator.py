@@ -31,7 +31,8 @@ class Detection_Evaluator():
                 if on_prediction_begin is not None:
                     on_prediction_begin(id,img,boxes,labels)
 
-                _pred=self.predict_gpu(img.unsqueeze(0),default_device)
+                original_h,original_w,_= self._img_info_hooks.original_size
+                _pred=self.predict_gpu(img.unsqueeze(0),default_device,original_h,original_w)
 
                 for (x1,y1),(x2,y2),category,prob in _pred:
                     preds[self._COLOR_TABLE[category]].append([id,prob,x1,y1,x2,y2])
@@ -42,8 +43,9 @@ class Detection_Evaluator():
             eval(preds,targets,self._COLOR_TABLE)
 
 
-    def predict_gpu(self,img:torch.Tensor,default_device):
-        h,w,c = self._img_info_hooks.original_size 
+    def predict_gpu(self,img:torch.Tensor,default_device,orginal_h,orignal_w):
+        h=orginal_h
+        w=orignal_w
         with torch.no_grad():
             img = img.to(default_device)
             pred = self._model(img) #[1,g,g,30]
