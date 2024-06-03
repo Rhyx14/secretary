@@ -1,11 +1,10 @@
 __all__=[
 ]
-from .secretary.secretary_instance.training_secretary import Training_Secretary,Record_Loss
+from .secretary.secretary_instance.training_secretary import Training_Secretary
 from .secretary.secretary_instance.eval_secretary import Eval_Secretary
 __all__.extend([
     'Training_Secretary',
     'Eval_Secretary',
-    'Record_Loss',
 ])
 
 from .utils.ddp_sampler import DDP_BatchSampler
