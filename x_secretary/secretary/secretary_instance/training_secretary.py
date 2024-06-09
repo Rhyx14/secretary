@@ -45,8 +45,9 @@ class Training_Secretary(Secretary_base):
         s should be str or callable object 
         '''
         with open(self._working_dir/'configuration.txt','a') as f:
-            f.write(prefix)
-            f.write('\n')
+            if prefix !='':
+                f.write(prefix)
+                f.write('\n')
             if not isinstance(s,str):
                 s=s()
             f.write(s)
@@ -62,10 +63,9 @@ class Training_Secretary(Secretary_base):
         '''
         with open(self._working_dir/'configuration.txt','a') as f:
             f.write(name+'\n')
+            f.write(cfg.get_records_str())
             if reset:
-                f.write(cfg.get_records_str())
-            else:
-                f.write(cfg.get_records_str_and_reset())
+                cfg.reset_records()
             f.write('\n')
         return self
         
