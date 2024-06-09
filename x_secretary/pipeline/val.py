@@ -1,9 +1,9 @@
 import torch
-from .pipeline_base import PipelineBase,DDP_progressbar
+from .pipelinebase import PipelineBase,DDP_progressbar
 from torch.utils.data.dataloader import DataLoader
 from torch.cuda.amp import autocast
 
-class Image_val(PipelineBase):
+class Image_classification_val(PipelineBase):
     '''
     val pipline for image classification
 
@@ -39,7 +39,7 @@ class Image_val(PipelineBase):
                 batch_size=self.batch_size,
                 num_workers=self.dl_workers,
                 prefetch_factor=self.dl_prefetch_factor,
-                # shuffle=True,
+                shuffle=False,
                 pin_memory=True)
             )
 
@@ -75,7 +75,7 @@ class Image_val(PipelineBase):
         r=acc/float(len(self.dataset))
         return acc, r, _loss
 
-class Image_plain_val(Image_val):
+class Image_plain_val(Image_classification_val):
     def __init__(self, 
             logger,
             batch_size,
@@ -115,7 +115,7 @@ class Image_plain_val(Image_val):
 from ..computer_vision_utils.semantic_segmentation.metric import Metric
 class Image_segmentation_val(PipelineBase):
     '''
-    val pipline for image semantic segmentation
+    val pipline for image semantic segmentation, (solo mode, only on rank 0)
 
     on_turn_begin : hooks before each training turn, with parameter ()
 
