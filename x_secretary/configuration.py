@@ -105,8 +105,8 @@ class Configuration():
         for k,v in self.__dict__.items():
             if str.startswith(k,'_'):
                 continue
-            if isinstance(v,(str,int,float)):
-                ls += "%s\t%s\n" % (k,v)
+            elif isinstance(v,(torch.Tensor)):
+                ls += f"torch.Tensor<shape={v.shape}, dtype={v.dtype}>"
             else:
                 ls += "%s\t%s\n" % (k,v)
         return ls
