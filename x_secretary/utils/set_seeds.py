@@ -13,4 +13,4 @@ def set_seed(seed,determinstic=True):
     torch.manual_seed(seed)  # torch+CPU
     torch.cuda.manual_seed(seed)  # torch+GPU
     if(determinstic):
-        torch.use_deterministic_algorithms(True)
+        torch.use_deterministic_algorithms(True,warn_only=True)
