@@ -2,7 +2,7 @@ import torch
 from .pipeline_base import PipelineBase,DDP_progressbar
 from torch.utils.data.dataloader import DataLoader
 from torch.cuda.amp import autocast
-
+from tqdm import tqdm
 class Image_val(PipelineBase):
     '''
     val pipline for image classification
