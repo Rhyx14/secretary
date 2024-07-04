@@ -18,6 +18,7 @@ class Secretary_base():
         
         # default objects
         self._logger=logging.getLogger(logger_name)
+        self._logger.propagate=False
         self._logging_level=logging_level
         self._logger.setLevel(logging_level)
         self._default_logging_formatter=logging.Formatter('%(asctime)s-[%(name)s] %(message)s')
