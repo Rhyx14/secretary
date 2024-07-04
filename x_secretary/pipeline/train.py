@@ -2,7 +2,7 @@ from enum import Enum
 import torch
 from torch.utils.data.dataloader import DataLoader
 from ..utils.ddp_sampler import DDP_BatchSampler
-from .pipeline_base import PipelineBase
+from .pipelinebase import PipelineBase
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.cuda.amp import autocast
 class Image_training(PipelineBase):
@@ -56,6 +56,8 @@ class Image_training(PipelineBase):
         default_device='cpu',
         mode=Mode.CLASSIFICATION
         ):
+        super().__init__(default_device)
+
         self._cfg=cfg
         self._ddp=DDP
         self.on_epoch_end=on_epoch_end
@@ -68,7 +70,7 @@ class Image_training(PipelineBase):
         else:
             PipelineBase._Check_Attribute(self._cfg,'net',torch.nn.Module)
         PipelineBase._Check_Attribute(self._cfg,'loss')
-        PipelineBase._Check_Attribute(self._cfg,'opt',(torch.optim.Optimizer,))
+        PipelineBase._Check_Attribute(self._cfg,'opt',(torch.optim.Optimizer,list))
         PipelineBase._Check_Attribute(self._cfg,'train_dataset',(torch.utils.data.Dataset,))
         PipelineBase._Check_Attribute(self._cfg,'BATCH_SIZE',(int,))
         PipelineBase._Check_Attribute(self._cfg,'EPOCH',(int,))
@@ -98,8 +100,6 @@ class Image_training(PipelineBase):
             case Image_training.Mode.YOLO_DETECTION: self._unpack = self._unpack_cls
             case _ : raise  NotImplementedError(f'Pipleline for {mode} hasn''t been implemented yet.')
 
-        super().__init__(default_device)
-
     def Run(self,mix_precision=False,*args,**kwargs):
         CFG=self._cfg
 
@@ -115,25 +115,36 @@ class Image_training(PipelineBase):
                 x,y=self._unpack(datum)
 
                 PipelineBase.call_hooks(self.on_turn_begin,ep,_b_id)
-                CFG.opt.zero_grad(set_to_none=True)
+
+                if CFG.opt is not list: CFG.opt.zero_grad(set_to_none=True)
+                else:
+                    for __opt in CFG.opt : __opt.zero_grad(set_to_none=True)
 
                 if(mix_precision):
                     with autocast():
                         _out=CFG.net(x)
                         _loss = CFG.loss(_out,y)
                     scaler.scale(_loss).backward()
-                    scaler.step(CFG.opt)
+                    if CFG.opt is not list:
+                        scaler.step(CFG.opt)
+                    else:
+                        for __opt in CFG.opt : scaler.step(__opt)
                     scaler.update()
                     
                 else:
                     _out=CFG.net(x)
                     _loss = CFG.loss(_out,y)
                     _loss.backward()
-                    CFG.opt.step()
+                    if CFG.opt is not list: CFG.opt.step()
+                    else:
+                        for __opt in CFG.opt : __opt.step()
+
                 PipelineBase.call_hooks(self.on_turn_end,_batch_len,_b_id,_loss.item(),ep)
 
             if hasattr(CFG,'lr_scheduler'):
-                CFG.lr_scheduler.step()
+                if CFG.lr_scheduler is not list: CFG.lr_scheduler.step()
+                else:
+                    for __lr_sch in CFG.lr_scheduler: __lr_sch.step()
 
             PipelineBase.call_hooks(self.on_epoch_end,_loss.item(),ep)
         return

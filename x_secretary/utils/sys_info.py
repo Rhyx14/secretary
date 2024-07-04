@@ -1,14 +1,13 @@
-import os,sys,platform,torch
-import subprocess
+import os,sys,platform,torch,re,subprocess
 LINE='============================================================================='
 def get_cpu_name()->str:
     rslt=''
     try:
-        if sys.platform is 'linux':
-            _strs=subprocess.check_output(['cat','/proc/cpuinfo','|','grep','model name'])
+        if sys.platform == 'linux':
+            _strs=subprocess.check_output(['cat','/proc/cpuinfo'])
+            _strs=bytes.decode(_strs)
+            rslt=re.search(r"model name\t: ([\w\s\(\)]*)\n",_strs,re.S).group(1)
             # _strs=os.system('cat/cpuinfo | grep "model name"')
-            pass
-        else:
             pass
     except:
         pass
@@ -18,7 +17,7 @@ def get_cpu_name()->str:
 
 def get_sys_info() -> str:
     '''
-    获取系统环境信息（只支持CUDA环境）
+    获取系统环境信息（目前只支持CUDA环境）
     '''
     cuda_devices=[
         str(torch.cuda.get_device_properties(i))
