@@ -14,3 +14,19 @@ def set_seed(seed,determinstic=True):
     torch.cuda.manual_seed(seed)  # torch+GPU
     if(determinstic):
         torch.use_deterministic_algorithms(True,warn_only=True)
+
+# https://pytorch.org/docs/stable/notes/randomness.html
+def seed_worker(worker_id):
+    '''
+    set workers' seed for dataloader
+    '''
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
+
+def get_generator(seed=0):
+    '''
+    set dataloader's generator
+    '''
+    g = torch.Generator()
+    g.manual_seed(seed)

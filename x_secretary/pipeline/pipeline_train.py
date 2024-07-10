@@ -2,6 +2,7 @@ from enum import Enum
 import torch
 from torch.utils.data.dataloader import DataLoader
 from ..utils.ddp_sampler import DDP_BatchSampler
+from ..utils.set_seeds import seed_worker,get_generator
 from .pipeline_base import PipelineBase
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.cuda.amp import autocast
@@ -79,6 +80,8 @@ class Image_training(PipelineBase):
                 num_workers=dl_workers,
                 prefetch_factor=prefetch_factor,
                 pin_memory=True,
+                worker_init_fn=seed_worker, 
+                generator=get_generator(),
                 batch_sampler=DDP_BatchSampler(
                     CFG.train_dataset,
                     shuffle=True,
@@ -88,6 +91,8 @@ class Image_training(PipelineBase):
                 batch_size=CFG.BATCH_SIZE,
                 num_workers=dl_workers,
                 pin_memory=True,
+                worker_init_fn=seed_worker,
+                generator=get_generator(), 
                 prefetch_factor=prefetch_factor,
                 shuffle=True,
                 drop_last=True)
