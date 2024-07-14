@@ -5,6 +5,7 @@ from ..utils.ddp_sampler import DDP_BatchSampler
 from .pipelinebase import PipelineBase
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.cuda.amp import autocast
+from ..utils.set_seeds import seed_worker,get_generator
 class Image_training(PipelineBase):
     '''
     A training pipeline for supervised learning,
@@ -81,6 +82,8 @@ class Image_training(PipelineBase):
                 num_workers=dl_workers,
                 prefetch_factor=prefetch_factor,
                 pin_memory=True,
+                worker_init_fn=seed_worker,
+                generator=get_generator(),
                 batch_sampler=DDP_BatchSampler(
                     CFG.train_dataset,
                     shuffle=True,
@@ -92,6 +95,8 @@ class Image_training(PipelineBase):
                 pin_memory=True,
                 prefetch_factor=prefetch_factor,
                 shuffle=True,
+                worker_init_fn=seed_worker,
+                generator=get_generator(),
                 drop_last=True)
         
         match mode:
