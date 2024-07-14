@@ -1,9 +1,9 @@
-import logging
 import torch
 from torch.utils.data.dataloader import DataLoader
 from .pipeline_base import PipelineBase
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.cuda.amp import autocast
+from ..utils.set_seeds import seed_worker,get_generator
 
 class Image_training(PipelineBase):
     def __init__(self,
@@ -72,7 +72,8 @@ class Image_training(PipelineBase):
 
         cfg=self.cfg
 
-        dl=DataLoader(cfg.train_dataset,batch_size=cfg.BATCH_SIZE,num_workers=dl_workers,prefetch_factor=4,shuffle=True,drop_last=True)
+        dl=DataLoader(cfg.train_dataset,batch_size=cfg.BATCH_SIZE,num_workers=dl_workers,prefetch_factor=4,shuffle=True,drop_last=True,
+                      worker_init_fn=seed_worker,generator=get_generator(0))
         cfg.net.train()
         scaler=GradScaler()
 

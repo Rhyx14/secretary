@@ -1,10 +1,10 @@
-import logging
 import torch
 from torch.utils.data.dataloader import DataLoader
 from ..utils.ddp_sampler import DDP_BatchSampler
 from .pipeline_base import PipelineBase
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.cuda.amp import autocast
+from ..utils.set_seeds import seed_worker,get_generator
 
 import torch.distributed as distributed
 class Image_DDP_training(PipelineBase):
@@ -78,6 +78,7 @@ class Image_DDP_training(PipelineBase):
         cfg=self.cfg
 
         dl=DataLoader(cfg.train_dataset,num_workers=dl_workers,prefetch_factor=4,pin_memory=True,
+            worker_init_fn=seed_worker,generator=get_generator(0),
             batch_sampler=DDP_BatchSampler(cfg.train_dataset,shuffle=True,batch_size=cfg.BATCH_SIZE))
         cfg.net.train()
         
