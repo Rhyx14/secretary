@@ -20,9 +20,8 @@ def seed_worker(worker_id):
     '''
     set workers' seed for dataloader
     '''
-    worker_seed = torch.initial_seed() % 2**32
-    np.random.seed(worker_seed)
-    random.seed(worker_seed)
+    np.random.seed(worker_id)
+    random.seed(worker_id)
 
 def get_generator(seed=0):
     '''
