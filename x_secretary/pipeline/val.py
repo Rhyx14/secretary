@@ -21,6 +21,7 @@ class Image_classification_val(PipelineBase):
             dl_prefetch_factor=2,
             on_turn_begin=None,
             on_turn_end=None,
+            cpu=None,
         ) -> None:
         super().__init__(None)
         self.net=net
@@ -33,7 +34,7 @@ class Image_classification_val(PipelineBase):
         self.on_turn_end=on_turn_end
         
         from accelerate import Accelerator
-        self._accelerator=Accelerator(split_batches=True,even_batches=False)
+        self._accelerator=Accelerator(split_batches=True,even_batches=False,cpu=cpu)
         self._dl=self._accelerator.prepare_data_loader(
             DataLoader(
                 self.dataset,
