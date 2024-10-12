@@ -43,12 +43,12 @@ class Configuration():
         self.__setattr__(name,value)
         return value
     
-    def load_weight(self,net:torch.nn.Module,strict=False,weight_dict=None,path=None,include=None,exclude=None):
+    def load_weight(self,net:torch.nn.Module,strict=False,weight_key=None,path=None,include:list=None,exclude:list=None):
         """Load weight of networks.
 
         If 'path' is given, load the weight from the path.
         
-        else if 'weight_dict' is given, load the dict directly.
+        else if 'weight_key' is given, load the dict directly from CFG.<weight_key>.
 
         'include' means only specific layers are loaded.
 
@@ -59,8 +59,8 @@ class Configuration():
             strict (bool, optional): strict mode, same as the arg in torch.load. Defaults to False.
             weight_key (str, optional): default key of weight in the object. Defaults to 'PRE_TRAIN'.
             path (_type_, optional): weight path. Defaults to None.
-            include (_type_, optional): include pattern (re). Defaults to None.
-            exclude (_type_, optional): exlude pattern (re). Defaults to None.
+            include (list, optional): include pattern (re). Defaults to None.
+            exclude (list, optional): exlude pattern (re). Defaults to None.
 
         Returns:
             None
@@ -70,9 +70,9 @@ class Configuration():
             _weight=torch.load(path,map_location='cpu')
             self.logger.info(f"Loading weight from {path}.")
             
-        elif hasattr(self,weight_dict):
-            _weight=torch.load(weight_dict,map_location='cpu')
-            self.logger.info("Direct loading weight for dict object.")
+        elif hasattr(self,weight_key):
+            _weight=torch.load(self.__dict__[weight_key],map_location='cpu')
+            self.logger.info(f"Loading weight from CFG.{weight_key}.")
         
         if _weight is not None:
             if include !=None and exclude !=None:
