@@ -44,6 +44,13 @@ def opencv_seg_label_to_torchTensor(label: numpy.ndarray) -> torch.Tensor:
 # RGB
 MEAN=[0.485,0.456,0.406]
 def adapt_to_shape(img:np.ndarray,label:np.ndarray,target_shape:tuple,ignore_label=255):
+    '''
+    adapt image to a designated size, keeping the ratio, fill the blank with ImageNet MEAN pixel 
+
+    note that the label should be a three channel image (but all channel are the same )
+    '''
+    assert isinstance(img,np.ndarray)
+    assert isinstance(label,np.ndarray)
     _oh,_ow,_oc=img.shape
     _dh=abs(_oh-target_shape[0])
     _dw=abs(_ow-target_shape[1])
@@ -51,7 +58,6 @@ def adapt_to_shape(img:np.ndarray,label:np.ndarray,target_shape:tuple,ignore_lab
     _rslt_img=(np.array(MEAN[::-1])*255).astype(img.dtype) # mean of ImageNet-1k, bgr
     _rslt_img=einops.repeat(_rslt_img,'c -> h w c', h=target_shape[0],w=target_shape[1])
     _rslt_label=np.zeros_like(_rslt_img,dtype=label.dtype)+255
-
 
     if _dh > _dw : # resize the image in the w dimension
         _new_w= target_shape[1]
@@ -74,6 +80,37 @@ def adapt_to_shape(img:np.ndarray,label:np.ndarray,target_shape:tuple,ignore_lab
         _start_x:_start_x+_source_img.shape[1],:]=_source_img
     _rslt_label[
         _start_y:_start_y+_source_label.shape[0],
-        _start_x:_start_x+_source_label.shape[1],:]=_source_label
+        _start_x:_start_x+_source_label.shape[1],...]=_source_label
     
     return _rslt_img,_rslt_label
+
+import random
+def select_random_area(img,label,shape=(128,128)):
+    '''
+    randomly select area
+    '''
+    if isinstance(img,np.ndarray):
+        h,w,c=img.shape
+        start_h=random.randrange(0,h-shape[0])
+        start_w=random.randrange(0,w-shape[1])
+        return img[start_h:start_h+shape[0],start_w:start_w+shape[1],:],label[start_h:start_h+shape[0],start_w:start_w+shape[1]]
+    elif isinstance(img,torch.Tensor):
+        c,h,w=img.shape
+        start_h=random.randrange(0,h-shape[0])
+        start_w=random.randrange(0,w-shape[1])
+        return img[:,start_h:start_h+shape[0],start_w:start_w+shape[1]],label[start_h:start_h+shape[0],start_w:start_w+shape[1]]
+
+def select_central_area(img,label,shape=(128,128)):
+    '''
+    select central area 
+    '''
+    if isinstance(img,np.ndarray):
+        h,w,c=img.shape
+        start_h=(h-shape[0]) //2
+        start_w=(h-shape[1]) //2
+        return img[start_h:start_h+shape[0],start_w:start_w+shape[1],:],label[start_h:start_h+shape[0],start_w:start_w+shape[1]]
+    elif isinstance(img,torch.Tensor):
+        c,h,w=img.shape
+        start_h=(h-shape[0]) //2
+        start_w=(h-shape[1]) //2
+        return img[:,start_h:start_h+shape[0],start_w:start_w+shape[1]],label[start_h:start_h+shape[0],start_w:start_w+shape[1]]
