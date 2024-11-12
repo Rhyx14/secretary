@@ -1,5 +1,5 @@
 from typing import Any
-from ..data_recorder import Avg
+from ..utils.data_recorder import Avg
 class Record_Loss:
     def __init__(self,secretary,name_prefix='') -> None:
         self._secretary=secretary

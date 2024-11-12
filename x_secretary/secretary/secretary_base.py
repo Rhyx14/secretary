@@ -10,7 +10,7 @@ import torch.distributed as dist
 import torch
 from ..utils.autodl import info_wechat_autodl
 from .solo_method import solo_method,solo_method_with_default_return,solo_chaining_method
-from ..data_recorder import data_recorder
+from ..utils.data_recorder import data_recorder
 from ..deprecated import deprecated
 class Secretary_base():
 
