@@ -11,7 +11,7 @@ from .utils.ddp_sampler import DDP_BatchSampler
 from .utils.sys_info import get_sys_info,get_host_name
 from .utils.init_env import init_cuda
 from .utils.set_seeds import set_seed
-from .utils.time import get_str_time
+from .utils.time import get_str_time,measure_func_time,measure_time
 from .utils.log_dir import Log_dir
 from .utils.opencv_loader import OpenCV_Loader
 from .utils.count_parameters import count_parameters
@@ -25,7 +25,7 @@ __all__.extend([
     'set_seed',
     'get_sys_info',
     'get_host_name',
-    'get_str_time',
+    'get_str_time',"measure_func_time","measure_time",
     'Log_dir',
     'OpenCV_Loader',
     'count_parameters',
