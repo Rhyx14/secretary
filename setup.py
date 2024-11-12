@@ -8,7 +8,7 @@ long_description = None
 setup(
       name='x_secretary', # 包名称
       packages=find_packages(exclude=['__pycache__']), # 需要处理的包目录
-      version='0.2.241014', # 版本
+      version='0.2.241112', # 版本
       classifiers=[
           'Development Status :: 3 - Alpha',
           'License :: OSI Approved :: MIT License',
@@ -16,7 +16,7 @@ setup(
           'Programming Language :: Python :: 3.10',
       ],
       install_requires=['torch'],
-      extras_requires=['opencv-python','accelerate','tqdm','torchvision','toml'],
+      extras_requires=['opencv-python','accelerate','tqdm','torchvision','pyyaml'],
       scripts=['bin/xsrun'],
     #   entry_points={'console_scripts': ['pmm=pimm.pimm_module:main']},
     #   package_data={'': ['*.json']},

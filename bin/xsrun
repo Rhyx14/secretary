@@ -5,8 +5,8 @@ from pathlib import Path
 import json
 from itertools import takewhile,dropwhile
 import uuid
-
-CFG=Configuration().add_args([
+import yaml
+CFG=Configuration(auto_record=False).add_args([
     ('--template','get template'),
     ('-i','--input',str,None,'the cmd file'),
 ])
@@ -38,8 +38,17 @@ def get_process(raw_cmd:str,replace_dict:dict):
 def run():
     if CFG.input is None:
         raise ValueError('No designated cmd file')
-    _batch_json=json.loads(Path.read_text(Path(CFG.input)))
-    CFG.update(_batch_json)
+    CFG.input=Path(CFG.input)
+    match CFG.input.suffix:
+        case '.json':
+            batch_info=json.loads(Path.read_text(Path(CFG.input)))
+        case '.yaml':
+            with open(CFG.input, 'r', encoding='utf-8') as file:
+                batch_info = yaml.safe_load(file)
+        case _:
+            raise NotImplementedError(f'Not support files type {CFG.input.suffix}.')
+        
+    CFG.update(batch_info)
     match CFG.mode:
         case 'plain':
             _replace_dict={}
