@@ -1,7 +1,6 @@
-import torch
+import torch,accelerate
+import torch.distributed
 from .pipelinebase import PipelineBase
-from torch.cuda.amp.grad_scaler import GradScaler
-from torch.cuda.amp import autocast
 from .train import Image_training
 class Image_KD_training(Image_training):
     '''
@@ -42,13 +41,12 @@ class Image_KD_training(Image_training):
                  on_epoch_end=None, 
                  on_turn_begin=None, 
                  on_turn_end=None, 
-                 DDP=False, 
                  dl_workers=4, 
                  prefetch_factor=2, 
                  default_device='cpu', 
                  mode=Image_training.Mode.CLASSIFICATION):
         self.cfg=cfg
-        self._ddp=DDP
+        self._ddp=torch.distributed.is_torchelastic_launched()
         self.loss=None # only for the attribute check in the super class
         PipelineBase._Check_Attribute(self.cfg,'Teacher',torch.nn.Module)
         if self._ddp:
@@ -61,7 +59,7 @@ class Image_KD_training(Image_training):
             cfg.loss=lambda x: x
         PipelineBase._Check_Attribute(self.cfg,'KD_loss',(object,)) 
         
-        super().__init__(cfg, on_epoch_begin, on_epoch_end, on_turn_begin, on_turn_end, DDP, dl_workers, prefetch_factor, default_device, mode)
+        super().__init__(cfg, on_epoch_begin, on_epoch_end, on_turn_begin, on_turn_end, dl_workers, prefetch_factor, default_device, mode)
 
 
     def Run(self,mix_precision=False,*args,**kwargs):
@@ -69,7 +67,7 @@ class Image_KD_training(Image_training):
         CFG.Teacher.eval()
         CFG.Student.train()
 
-        scaler=GradScaler()
+        scaler=accelerate.utils.get_grad_scaler()
         for ep in range(CFG.EPOCH):
             
             PipelineBase.call_hooks(self.on_epoch_begin,ep)
@@ -79,32 +77,24 @@ class Image_KD_training(Image_training):
 
                 PipelineBase.call_hooks(self.on_turn_begin,_b_id)
                 
-                if CFG.opt is not list: CFG.opt.zero_grad(set_to_none=True)
-                else:
-                    for __opt in CFG.opt : __opt.zero_grad(set_to_none=True)
+                for _2_opt in CFG.opt : _2_opt.zero_grad(set_to_none=True)
                 
+                with self._accelerator.autocast():
+                    _loss = CFG.KD_loss(x,y)
                 if mix_precision:
-                    with autocast():
-                        _loss = CFG.KD_loss(x,y)
                     scaler.scale(_loss).backward()
-                    if CFG.opt is not list: scaler.step(CFG.opt)
-                    else:
-                        for __opt in CFG.opt : scaler.step(__opt)
+                    for _2_opt in CFG.opt : scaler.step(_2_opt)
                     scaler.update()
 
                 else:
                     _loss = CFG.KD_loss(x,y)
                     _loss.backward()
-                    if CFG.opt is not list: CFG.opt.step()
-                    else:
-                        for __opt in CFG.opt: __opt.step()
+                    for _2_opt in CFG.opt: _2_opt.step()
                             
                 PipelineBase.call_hooks(self.on_turn_end,len(self._dl),_b_id,_loss.item(),ep)
 
             if hasattr(CFG,'lr_scheduler'):
-                if CFG.lr_scheduler is not list: CFG.lr_scheduler.step()
-                else:
-                    for __lr_sch in CFG.lr_scheduler: __lr_sch.step()
+                for __lr_sch in CFG.lr_scheduler: __lr_sch.step()
 
             PipelineBase.call_hooks(self.on_epoch_end,_loss.item(),ep)
         return

@@ -1,11 +1,10 @@
 from enum import Enum
 import torch
+import torch.distributed
 from torch.utils.data.dataloader import DataLoader
-from ..utils.ddp_sampler import DDP_BatchSampler
 from .pipelinebase import PipelineBase
-from torch.cuda.amp.grad_scaler import GradScaler
-from torch.cuda.amp import autocast
 from ..utils.set_seeds import seed_worker,get_generator
+import accelerate
 class Image_training(PipelineBase):
     '''
     A training pipeline for supervised learning,
@@ -18,11 +17,11 @@ class Image_training(PipelineBase):
     
         'train_dataset':torch.data.Dataset,
 
-        'net':torch.nn.Module  | torch.nn.parallel.distributed.DistributedDataParallel,
+        'net':torch.nn.Module | torch.nn.parallel.distributed.DistributedDataParallel,
 
         'loss':torch.nn.Module,
 
-        'opt':torch.optim.Optimizer,
+        'opt':list of torch.optim.Optimizer,
 
         'BATCH_SIZE':int,
 
@@ -39,7 +38,9 @@ class Image_training(PipelineBase):
 
     on_turn_end : hooks after each training turn, with parameter (batch len,batch_id,loss,ep)
 
-    mode: see Image_training2.Mode
+    mix_precision: Choose from 'no','fp16','bf16' or 'fp8', achieved via accelerate
+
+    mode: see Image_training.Mode
     '''
     class Mode(Enum):
         CLASSIFICATION=1
@@ -52,44 +53,38 @@ class Image_training(PipelineBase):
         on_epoch_end=None,
         on_turn_begin=None,
         on_turn_end=None,
-        DDP=False,
         dl_workers=4,prefetch_factor=2,
+        mixed_precision='fp16',
         default_device='cpu',
         mode=Mode.CLASSIFICATION
         ):
         super().__init__(default_device)
 
         self._cfg=cfg
-        self._ddp=DDP
+        self._ddp=torch.distributed.is_torchelastic_launched()
         self.on_epoch_end=on_epoch_end
         self.on_epoch_begin=on_epoch_begin
         self.on_turn_begin=on_turn_begin
         self.on_turn_end=on_turn_end
+        CFG=self._cfg
 
         if self._ddp:
             PipelineBase._Check_Attribute(self._cfg,'net',torch.nn.parallel.distributed.DistributedDataParallel)
         else:
             PipelineBase._Check_Attribute(self._cfg,'net',torch.nn.Module)
         PipelineBase._Check_Attribute(self._cfg,'loss')
-        PipelineBase._Check_Attribute(self._cfg,'opt',(torch.optim.Optimizer,list))
+        PipelineBase._Check_Attribute(self._cfg,'opt',(list,))
         PipelineBase._Check_Attribute(self._cfg,'train_dataset',(torch.utils.data.Dataset,))
         PipelineBase._Check_Attribute(self._cfg,'BATCH_SIZE',(int,))
         PipelineBase._Check_Attribute(self._cfg,'EPOCH',(int,))
 
-        CFG=self._cfg
-        if self._ddp:
-            self._dl=DataLoader(CFG.train_dataset,
-                num_workers=dl_workers,
-                prefetch_factor=prefetch_factor,
-                pin_memory=True,
-                worker_init_fn=seed_worker,
-                generator=get_generator(),
-                batch_sampler=DDP_BatchSampler(
-                    CFG.train_dataset,
-                    shuffle=True,
-                    batch_size=CFG.BATCH_SIZE))
-        else:
-            self._dl=DataLoader(CFG.train_dataset,
+        self._accelerator=accelerate.Accelerator(
+            mixed_precision=mixed_precision,
+            dataloader_config=accelerate.utils.DataLoaderConfiguration(
+                split_batches=True,data_seed=0,use_seedable_sampler=False
+            ))
+        self._dl=self._accelerator.prepare_data_loader(
+            DataLoader(CFG.train_dataset,
                 batch_size=CFG.BATCH_SIZE,
                 num_workers=dl_workers,
                 pin_memory=True,
@@ -98,19 +93,20 @@ class Image_training(PipelineBase):
                 worker_init_fn=seed_worker,
                 generator=get_generator(),
                 drop_last=True)
-        
+        )
+
         match mode:
             case Image_training.Mode.CLASSIFICATION: self._unpack = self._unpack_cls
             case Image_training.Mode.SEGMENTATION  : self._unpack = self._unpack_seg
             case Image_training.Mode.YOLO_DETECTION: self._unpack = self._unpack_cls
             case _ : raise  NotImplementedError(f'Pipleline for {mode} hasn''t been implemented yet.')
 
-    def Run(self,mix_precision=False,*args,**kwargs):
+    def Run(self,*args,**kwargs):
         CFG=self._cfg
 
         CFG.net.train()
         
-        scaler=GradScaler()
+        scaler=accelerate.utils.get_grad_scaler()
         _batch_len=len(self._dl)
         for ep in range(CFG.EPOCH):
             
@@ -118,38 +114,27 @@ class Image_training(PipelineBase):
             for _b_id,datum in enumerate(self._dl):
 
                 x,y=self._unpack(datum)
-
                 PipelineBase.call_hooks(self.on_turn_begin,ep,_b_id)
 
-                if CFG.opt is not list: CFG.opt.zero_grad(set_to_none=True)
-                else:
-                    for __opt in CFG.opt : __opt.zero_grad(set_to_none=True)
+                for __opt in CFG.opt : __opt.zero_grad(set_to_none=True)
 
-                if(mix_precision):
-                    with autocast():
-                        _out=CFG.net(x)
-                        _loss = CFG.loss(_out,y)
-                    scaler.scale(_loss).backward()
-                    if CFG.opt is not list:
-                        scaler.step(CFG.opt)
-                    else:
-                        for __opt in CFG.opt : scaler.step(__opt)
-                    scaler.update()
-                    
-                else:
+                with self._accelerator.autocast():
                     _out=CFG.net(x)
                     _loss = CFG.loss(_out,y)
+                    
+                if self._accelerator.mixed_precision is None:
                     _loss.backward()
-                    if CFG.opt is not list: CFG.opt.step()
-                    else:
-                        for __opt in CFG.opt : __opt.step()
+                    for __opt in CFG.opt : __opt.step()
+
+                else:
+                    scaler.scale(_loss).backward()
+                    for __opt in CFG.opt : scaler.step(__opt)
+                    scaler.update()                 
 
                 PipelineBase.call_hooks(self.on_turn_end,_batch_len,_b_id,_loss.item(),ep)
 
             if hasattr(CFG,'lr_scheduler'):
-                if CFG.lr_scheduler is not list: CFG.lr_scheduler.step()
-                else:
-                    for __lr_sch in CFG.lr_scheduler: __lr_sch.step()
+                for __lr_sch in CFG.lr_scheduler: __lr_sch.step()
 
             PipelineBase.call_hooks(self.on_epoch_end,_loss.item(),ep)
         return

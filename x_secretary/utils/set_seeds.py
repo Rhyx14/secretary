@@ -1,7 +1,8 @@
 import random
 import numpy as np
 import torch
-
+from ..deprecated import deprecated
+@deprecated('using accelerator.utils.set_seed instead')
 def set_seed(seed,determinstic=True):
     '''
     set random seed of torch, numpy and random

@@ -1,16 +1,17 @@
-import torch
+import torch,accelerate
 from .pipelinebase import PipelineBase,DDP_progressbar
 from torch.utils.data.dataloader import DataLoader
-from torch.cuda.amp import autocast
 from tqdm import tqdm
-
+from accelerate import Accelerator
 class Image_classification_val(PipelineBase):
     '''
-    val pipline for image classification
+    Image evaluation pipline for image classification
 
     on_turn_begin : hooks before each training turn, with parameter ()
 
     on_turn_end : hooks after each training turn, with parameter (batch_id)
+
+    mix_precision: Choose from 'no','fp16','bf16' or 'fp8' (achieved via accelerate)
     '''
     def __init__(self, 
             logger,
@@ -21,7 +22,8 @@ class Image_classification_val(PipelineBase):
             dl_prefetch_factor=2,
             on_turn_begin=None,
             on_turn_end=None,
-            cpu=None,
+            mix_precision='fp16',
+            cpu=False,
         ) -> None:
         super().__init__(None)
         self.net=net
@@ -32,9 +34,15 @@ class Image_classification_val(PipelineBase):
         self.dl_prefetch_factor=dl_prefetch_factor
         self.on_turn_begin=on_turn_begin
         self.on_turn_end=on_turn_end
+        self._mix_precision=mix_precision
         
-        from accelerate import Accelerator
-        self._accelerator=Accelerator(split_batches=True,even_batches=False,cpu=cpu)
+        self._accelerator=Accelerator(
+            dataloader_config=accelerate.utils.DataLoaderConfiguration(
+                split_batches=True,
+                even_batches=False
+            ),
+            mixed_precision=self._mix_precision,
+            cpu=cpu)
         self._dl=self._accelerator.prepare_data_loader(
             DataLoader(
                 self.dataset,
@@ -45,7 +53,7 @@ class Image_classification_val(PipelineBase):
                 pin_memory=True)
             )
 
-    def Run(self,loss=None,mix_precision=False,*args,**kwargs):
+    def Run(self,loss=None,*args,**kwargs):
         with torch.no_grad():
             acc=torch.Tensor([0]).to(self._accelerator.device)
             _loss=torch.Tensor([0]).to(self._accelerator.device)
@@ -57,11 +65,8 @@ class Image_classification_val(PipelineBase):
                 PipelineBase.call_hooks(self.on_turn_begin)
 
                 # simulate snn
-                if(mix_precision):
-                    with autocast():
-                        _out=self.net(x)
-                else:
-                    _out=self.net(x)  
+                with self._accelerator.autocast():
+                    _out=self.net(x)
 
                 if loss is not None:
                     _loss = (_loss*_bid + loss(_out,label).item())/(_bid+1)
@@ -78,19 +83,16 @@ class Image_classification_val(PipelineBase):
         return acc, r, _loss
 
 class Image_plain_val(Image_classification_val):
-    def __init__(self, 
-            logger,
-            batch_size,
-            net,
-            dataset,
-            dl_workers=4,
-            dl_prefetch_factor=2,
-            on_turn_begin=None,
-            on_turn_end=None,
-        ) -> None:
-        super().__init__(logger,batch_size,net,dataset,dl_workers,dl_prefetch_factor,on_turn_begin,on_turn_end)
+    '''
+    Image evaluation pipline
 
-    def Run(self,loss=None,mix_precision=False,*args,**kwargs):
+    on_turn_begin : hooks before each training turn, with parameter ()
+
+    on_turn_end : hooks after each training turn, with parameter (batch_id)
+
+    mix_precision: Choose from 'no','fp16','bf16' or 'fp8' (achieved via accelerate)
+    '''
+    def Run(self,loss=None,*args,**kwargs):
         with torch.no_grad():
             _loss=torch.Tensor([0]).to(self._accelerator.device)
 
@@ -100,11 +102,8 @@ class Image_plain_val(Image_classification_val):
 
                 PipelineBase.call_hooks(self.on_turn_begin)
                 # simulate
-                if(mix_precision):
-                    with autocast():
-                        _out=self.net(x)
-                else:
-                    _out=self.net(x)  
+                with self._accelerator.autocast():
+                    _out=self.net(x)
 
                 if loss is not None:
                     _loss = (_loss*_bid + loss(_out,label).item())/(_bid+1)
