@@ -12,6 +12,8 @@ from ..utils.autodl import info_wechat_autodl
 from .solo_method import solo_method,solo_method_with_default_return,solo_chaining_method
 from ..utils.data_recorder import data_recorder
 from ..deprecated import deprecated
+from functools import wraps
+
 class Secretary_base():
 
     def __init__(self,working_dir:Path,logger_name:str='secretary',logging_level=logging.INFO) -> None:
@@ -21,8 +23,8 @@ class Secretary_base():
         self._logger.propagate=False
         self._logging_level=logging_level
         self._logger.setLevel(logging_level)
-        self._default_logging_formatter=logging.Formatter('%(asctime)s-[%(name)s] %(message)s')
 
+        self._default_logging_formatter=logging.Formatter('%(asctime)s-<%(name)s>[%(levelname)s] %(message)s')
         _ch=logging.StreamHandler()
         _ch.setLevel(self._logging_level)
         _ch.setFormatter(self._default_logging_formatter)
@@ -30,7 +32,9 @@ class Secretary_base():
 
         self._time_stamps=None
         self._data=data_recorder()
+
         self._stages_list=[]
+        self._stage_act_template=['todo']
         self.stage_env=None
         
         if(dist.is_torchelastic_launched()):
@@ -164,11 +168,20 @@ class Secretary_base():
             self._time_stamps=now
         return self
 
-    def register_stage(self,priority=-1,pre_acts=[],post_acts=[],env_obj=None):
+    def register_stage(self,priority=-1,pre_acts=[],post_acts=[],stage_env=None):
         '''
-        添加执行阶段,根据prioirity顺序(由小到大)执行。
-        after_actions: 该阶段完成后执行的动作
+        添加执行阶段
+
+        ---
+        prioirity: 根据顺序(由小到大)执行
+
+        pre_acts: 该阶段完成前执行的动作
+
+        post_acts: 该阶段完成后执行的动作
+
+        env_obj: 一些环境变量,通过secretary实例的stage_env访问
         '''
+        
         def outter(f,*args,**kwargs):
             
             # 未指定优先级则自动添加（最低优先级）
@@ -176,17 +189,37 @@ class Secretary_base():
                 _priority=len(self._stages_list)+1
             else:
                 _priority=priority
-
-            self._stages_list.append([
-                _priority,
-                [*pre_acts,f,*post_acts],
-                env_obj
-            ])
+            
+            _act_list=[]
+            for _2_act in self._stage_act_template:
+                if _2_act !='todo':
+                    _act_list.append(_2_act)
+                else:
+                    _act_list.extend(pre_acts)
+                    _act_list.append(f)
+                    _act_list.extend(post_acts)
+            
+            self._stages_list.append((_priority,_act_list,stage_env))
+            
+            @wraps(f)
             def inner():
                 f(*args,**kwargs)
             return inner
         return outter
     
+    def set_act_template(self,act_template: list):
+        '''
+        set the act template 
+        ---
+
+        Eg:
+
+        [funcA, funcB, 'todo', funcC, funcD] means, the stage will excute at the sequence as the placeholder 'todo'. 
+        '''
+        self._stage_act_template=act_template
+        if 'todo' not in self._stage_act_template:
+            raise ValueError(f'You need to set the placeholder "todo" somewhere')
+        
     def run_stages(self):
         '''
         执行已注册的训练阶段

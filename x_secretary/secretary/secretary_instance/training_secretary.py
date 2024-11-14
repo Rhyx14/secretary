@@ -41,12 +41,13 @@ class Training_Secretary(Secretary_base):
         '''
         log string to the configuration files,
 
-        s should be str or callable object 
+        s / prefix should be a str or callable object 
         '''
         with open(self._working_dir/'configuration.txt','a') as f:
+            if not isinstance(prefix,str):
+                prefix=prefix()
             if prefix !='':
-                f.write(prefix)
-                f.write('\n')
+                f.write(f'# ==================== {prefix} ===========================\n')
             if not isinstance(s,str):
                 s=s()
             f.write(s)

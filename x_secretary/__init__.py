@@ -6,7 +6,7 @@ __all__.extend([
     'Training_Secretary',
     'Eval_Secretary',
 ])
-
+from .utils.data_recorder import Serial,Avg
 from .utils.ddp_sampler import DDP_BatchSampler
 from .utils.sys_info import get_sys_info,get_host_name
 from .utils.init_env import init_cuda
@@ -20,6 +20,7 @@ from .utils.faster_save_on_cpu import offload_module,restore_offload
 from .utils.split_bn_parameters import split_decay_parameters
 from .utils.get_name_dict import get_name_dict
 __all__.extend([
+    'Serial','Avg',
     'DDP_BatchSampler',
     'init_cuda',
     'set_seed',

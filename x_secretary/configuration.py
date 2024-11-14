@@ -11,13 +11,15 @@ class Configuration():
 
         if logger is None:
             self.logger=logging.getLogger('CONFIGURATION')
+            logger_handler=logging.StreamHandler(sys.stdout)
+            logger_handler.setFormatter(logging.Formatter('%(asctime)s-<%(name)s>[%(levelname)s] %(message)s'))
+            self.logger.addHandler(logger_handler)
             self.logger.setLevel(logging.INFO)
-            _logger_handler=logging.StreamHandler(sys.stdout)
-            _logger_handler.setFormatter(logging.Formatter('%(asctime)s-[%(name)s] %(message)s'))
-            self.logger.addHandler(_logger_handler)
+            self.logger.propagate=False
+                
         else:
             self.logger=logger
-        
+
         self._parser=argparse.ArgumentParser()
         self.NAME='default'
 
@@ -68,16 +70,16 @@ class Configuration():
         if path is not None:
             _weight=torch.load(path,map_location='cpu')
             self.logger.info(f"Loading weight from {path}.")
-            
-        elif hasattr(self,weight_key):
+
+        elif weight_key is not None and hasattr(self,weight_key):
             _weight=torch.load(self.__dict__[weight_key],map_location='cpu')
             self.logger.info(f"Loading weight from CFG.{weight_key}.")
         
         if _weight is not None:
             if include !=None and exclude !=None:
                 raise ValueError('param "include" and "exclude" are exclusive')  
-            if include !=None or exclude !=None:
-                if strict==True : raise ValueError('"strict = True" is not compatible with "include" or "exclude".')  
+
+            if strict==True : raise ValueError('"strict = True" is not compatible with "include" or "exclude".')  
 
             if include is not None:
                 _tmp={}
@@ -96,7 +98,9 @@ class Configuration():
             
             net.load_state_dict(_weight,strict=strict)
             self.logger.info(f"Loading weight from {path}, including: {include}, excluding: {exclude}")
-            
+            return self
+        
+        self.logger.warning(f'No weights has been loaded !!!')
         return self
     
     def __str__(self) -> str:

@@ -48,7 +48,8 @@ class PipelineBase():
     def _Check_Attribute(obj,key:str,type: tuple | Any =None):
         if hasattr(obj,key):
             if type is not None:
-                assert isinstance(obj.__dict__[key],type)
+                if not isinstance(obj.__dict__[key],type):
+                    raise TypeError(f'Attribute "{str(key)}" is not the type "{str(type)}"')
         else:
             raise Exception(f'Missing "{str(key)}" with type "{str(type)}"')
         

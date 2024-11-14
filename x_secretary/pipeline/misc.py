@@ -1,6 +1,15 @@
 from typing import Any
 from ..utils.data_recorder import Avg
 class Record_Loss:
+    '''
+    Record loss
+    ---
+    Average value: f'{self._name_prefix}_training_loss_{epochs}'
+
+    And print(solo): 
+
+        f'Epoch {epochs}: {batch_id}/{batch_len}, training loss: {loss_value:.5f} - avg: {self._secretary.data[_key]:.10f}',end='\\r'
+    '''
     def __init__(self,secretary,name_prefix='') -> None:
         self._secretary=secretary
         self._name_prefix=name_prefix
