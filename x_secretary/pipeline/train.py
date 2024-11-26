@@ -43,9 +43,19 @@ class Image_training(PipelineBase):
     mode: see Image_training.Mode
     '''
     class Mode(Enum):
+        '''
+        CLASSIFICATION: for classsification
+
+        CLASSIFICATION_GPU: for classsification, with gpu transforms (require self.transforms)
+
+        SEGMENTATION: for segmentation
+
+        YOLO_DETECTION: for yolov1 based detection
+        '''
         CLASSIFICATION=1
-        SEGMENTATION=2
-        YOLO_DETECTION=3
+        CLASSIFICATION_GPU=2
+        SEGMENTATION=3
+        YOLO_DETECTION=4
 
     def __init__(self,
         cfg,
@@ -56,9 +66,9 @@ class Image_training(PipelineBase):
         dl_workers=4,prefetch_factor=2,
         mixed_precision='fp16',
         default_device='cpu',
-        mode=Mode.CLASSIFICATION
+        mode=Mode.CLASSIFICATION,
+        extra_transforms=lambda x:x
         ):
-        super().__init__(default_device)
 
         self._cfg=cfg
         self._ddp=torch.distributed.is_torchelastic_launched()
@@ -94,6 +104,7 @@ class Image_training(PipelineBase):
                 generator=get_generator(),
                 drop_last=True)
         )
+        super().__init__(default_device,extra_transforms)
 
         match mode:
             case Image_training.Mode.CLASSIFICATION: self._unpack = self._unpack_cls

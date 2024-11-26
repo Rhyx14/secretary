@@ -13,15 +13,22 @@ def DDP_progressbar(iterator):
     
 
 class PipelineBase():
-    def __init__(self,default_device='cpu') -> None:
+    def __init__(self,default_device,extra_transforms) -> None:
         self.default_device=default_device
+        self._extra_transforms=extra_transforms
         pass
     
     def _unpack_seg(self,datum):
         return datum['X'].to(self.default_device),datum['Y'].to(self.default_device)
 
+    def _unpack_yolo(self,datum):
+        return datum[0].to(self.default_device),datum[1].to(self.default_device) 
+    
     def _unpack_cls(self,datum):
-        return datum[0].to(self.default_device),datum[1].to(self.default_device)
+        x=datum[0].to(self.default_device)
+        y=datum[1].to(self.default_device)
+        x=self._extra_transforms(x)
+        return x,y
     
     def _unpack(self,datum):
         '''

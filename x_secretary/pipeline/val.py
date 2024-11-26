@@ -13,7 +13,7 @@ class Image_classification_val(PipelineBase):
 
     mix_precision: Choose from 'no','fp16','bf16' or 'fp8' (achieved via accelerate)
     '''
-    def __init__(self, 
+    def __init__(self,
             logger,
             batch_size,
             net,
@@ -24,8 +24,9 @@ class Image_classification_val(PipelineBase):
             on_turn_end=None,
             mix_precision='fp16',
             cpu=False,
+            extra_transforms=lambda x:x
         ) -> None:
-        super().__init__(None)
+
         self.net=net
         self.logger=logger
         self.batch_size=batch_size
@@ -35,7 +36,7 @@ class Image_classification_val(PipelineBase):
         self.on_turn_begin=on_turn_begin
         self.on_turn_end=on_turn_end
         self._mix_precision=mix_precision
-        
+
         self._accelerator=Accelerator(
             dataloader_config=accelerate.utils.DataLoaderConfiguration(
                 split_batches=True,
@@ -43,6 +44,7 @@ class Image_classification_val(PipelineBase):
             ),
             mixed_precision=self._mix_precision,
             cpu=cpu)
+        
         self._dl=self._accelerator.prepare_data_loader(
             DataLoader(
                 self.dataset,
@@ -52,16 +54,17 @@ class Image_classification_val(PipelineBase):
                 shuffle=False,
                 pin_memory=True)
             )
+                
+        super().__init__(self._accelerator.device,extra_transforms)
 
     def Run(self,loss=None,*args,**kwargs):
         with torch.no_grad():
             acc=torch.Tensor([0]).to(self._accelerator.device)
             _loss=torch.Tensor([0]).to(self._accelerator.device)
 
-            for _bid,(x,label) in enumerate(DDP_progressbar(self._dl)):
+            for _bid,datum in enumerate(DDP_progressbar(self._dl)):
+                x,label=self._unpack_cls(datum)
 
-                x=x.to(self._accelerator.device,non_blocking=True)
-                label=label.to(self._accelerator.device,non_blocking=True)
                 PipelineBase.call_hooks(self.on_turn_begin)
 
                 # simulate snn
@@ -96,9 +99,8 @@ class Image_plain_val(Image_classification_val):
         with torch.no_grad():
             _loss=torch.Tensor([0]).to(self._accelerator.device)
 
-            for _bid,(x,label) in enumerate(DDP_progressbar(self._dl)):
-                x=x.to(self._accelerator.device,non_blocking=True)
-                label=label.to(self._accelerator.device,non_blocking=True)
+            for _bid,datum in enumerate(DDP_progressbar(self._dl)):
+                x,label=self._unpack_cls(datum)
 
                 PipelineBase.call_hooks(self.on_turn_begin)
                 # simulate
@@ -128,16 +130,14 @@ class Image_segmentation_val(PipelineBase):
             n_classes,
             net:torch.nn.Module,
             dataset,
-            cuda_device:str=None,
+            default_device:str=None,
             dl_workers=4,
             dl_prefetch_factor=2,
             on_turn_begin=None,
             on_turn_end=None,):
-        super().__init__()
         self.net=net
         self.logger=logger
         self.batch_size=batch_size
-        self.cuda_device=cuda_device
         self.n_classes=n_classes
         self.dataset=dataset
         self.dl_workers=dl_workers
@@ -145,6 +145,8 @@ class Image_segmentation_val(PipelineBase):
 
         self.on_turn_begin=on_turn_begin
         self.on_turn_end=on_turn_end
+        
+        super().__init__(default_device,lambda x: x)
 
     def Run(self,*args,**kwargs):
 
@@ -156,7 +158,7 @@ class Image_segmentation_val(PipelineBase):
                       pin_memory=True)
         with torch.no_grad():
             for iter, datum in enumerate(tqdm(dl,leave=False)):
-               inputs = datum['X'].to(self.cuda_device)
+               inputs = datum['X'].to(self.default_device)
                gt=datum['Y'].cpu().numpy()
 
                # simulate snn
