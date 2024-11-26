@@ -1,11 +1,18 @@
-import os,logging,sys
-import torch
-import argparse
+import os,logging,sys,torch,argparse
+import json,yaml
 import torch.distributed as dist
 from typing import Any, Union
+import pathlib
 import re
 class Configuration():
     def __init__(self,init_dict:dict=None,auto_record:bool=True,logger=None) -> None:
+        '''
+        The configuation object.
+
+        auto_record: record the item changes that its key doesn't started with '_'
+
+        logger: whether using external logger. If logger is set to None, a new logger will be created
+        '''
         self._auto_record=auto_record
         self._change_set=set()
 
@@ -44,6 +51,15 @@ class Configuration():
         self.__setattr__(name,value)
         return value
     
+    def update_from_files(self,path:pathlib.Path):
+        match path.suffix:
+            case '.json':
+                self.update(json.loads(path.read_text('uft-8')))
+            case '.yaml':
+                stream=path.open()
+                self.update(yaml.safe_load(stream))
+                stream.close() 
+
     def load_weight(self,net:torch.nn.Module,strict=False,weight_key=None,path=None,include:list=None,exclude:list=None):
         """Load weight of networks.
 
