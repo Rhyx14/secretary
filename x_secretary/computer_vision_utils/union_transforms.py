@@ -1,6 +1,5 @@
 from typing import Any
 
-
 class Transform_Wrapper_Base():
     def __init__(self,transform) -> None:
         self._transform=transform

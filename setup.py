@@ -8,15 +8,14 @@ long_description = None
 setup(
       name='x_secretary', # 包名称
       packages=find_packages(exclude=['__pycache__']), # 需要处理的包目录
-      version='0.3.241126', # 版本
+      version='0.3.241127', # 版本
       classifiers=[
           'Development Status :: 3 - Alpha',
           'License :: OSI Approved :: MIT License',
           'Programming Language :: Python', 'Intended Audience :: Developers',
           'Programming Language :: Python :: 3.10',
       ],
-      install_requires=['torch>=2.0.1','opencv-python','tqdm','pyyaml','accelerate>=1.1.0'],
-      extras_requires=['torchvision'],
+      install_requires=['torch>=2.0.1','opencv-python','tqdm','pyyaml','accelerate>=1.1.0','torchvision>=0.15'],
       scripts=['bin/xsrun'],
     #   entry_points={'console_scripts': ['pmm=pimm.pimm_module:main']},
     #   package_data={'': ['*.json']},
@@ -28,4 +27,4 @@ setup(
       license='MIT', # 协议
       python_requires='>=3.10'
     #   keywords='pimm source manager'  # 关键字 搜索用
-    )
+)

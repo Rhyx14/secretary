@@ -52,13 +52,17 @@ class Configuration():
         return value
     
     def update_from_files(self,path:pathlib.Path):
+        path=pathlib.Path(path)
         match path.suffix:
             case '.json':
                 self.update(json.loads(path.read_text('uft-8')))
             case '.yaml':
                 stream=path.open()
                 self.update(yaml.safe_load(stream))
-                stream.close() 
+                stream.close()
+            case _ :
+                raise NotImplementedError
+        return self
 
     def load_weight(self,net:torch.nn.Module,strict=False,weight_key=None,path=None,include:list=None,exclude:list=None):
         """Load weight of networks.

@@ -2,7 +2,7 @@ import random
 import cv2
 import numpy as np
 import torch
-from ..transforms import random_function
+from ..random_function import random_function
 
 @random_function
 def flip_detection(img, boxes,p=0.5):    

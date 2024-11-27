@@ -1,7 +1,6 @@
 import torch
 import os
 import cv2
-from .metric import Metric
 from pathlib import Path
 import numpy as np
 import einops
