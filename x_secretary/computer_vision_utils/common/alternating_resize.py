@@ -2,10 +2,16 @@ import torch
 from torchvision.transforms.v2.functional import resize_image
 import torch.distributed as dist
 class AlternatingResize(torch.nn.Module):
+    '''
+    Resize the image with certain shapes
+
+    Need to maunally set the next_shape() to alter the target shape 
+
+    Only support torch.Tensor, i.e., transforms.v2, in the extra_transform part
+    '''
     def __init__(self,shape_list,frequency) -> None:
         super().__init__()
         self._index=0
-        self._rank=dist.get_rank()
         
         self._shape_list=shape_list
 

@@ -27,7 +27,8 @@ class PipelineBase():
     def _unpack_cls(self,datum):
         x=datum[0].to(self.default_device)
         y=datum[1].to(self.default_device)
-        x=self._extra_transforms(x)
+        with torch.no_grad():
+            x=self._extra_transforms(x)
         return x,y
     
     def _unpack(self,datum):
