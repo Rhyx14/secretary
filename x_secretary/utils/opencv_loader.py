@@ -9,7 +9,7 @@ class OpenCV_Loader:
 
     def __call__(self, path):
         img=cv2.imread(path,cv2.IMREAD_COLOR)
-        if self.resize is not None:
+        if self.resize[0] is not None:
             img=cv2.resize(img,dsize=self.resize)
         if self.ret_type==OpenCV_Loader.RET_PIL:
             return Image.fromarray(cv2.cvtColor(img,cv2.COLOR_BGR2RGB))

@@ -133,14 +133,13 @@ class Image_training(PipelineBase):
                     _out=CFG.net(x)
                     _loss = CFG.loss(_out,y)
                     
-                if self._accelerator.mixed_precision is None:
-                    _loss.backward()
-                    for __opt in CFG.opt : __opt.step()
-
-                else:
-                    scaler.scale(_loss).backward()
-                    for __opt in CFG.opt : scaler.step(__opt)
-                    scaler.update()                 
+                    if self._accelerator.mixed_precision is None:
+                        _loss.backward()
+                        for __opt in CFG.opt : __opt.step()
+                    else:
+                        scaler.scale(_loss).backward()
+                        for __opt in CFG.opt : scaler.step(__opt)
+                        scaler.update()                 
 
                 PipelineBase.call_hooks(self.on_turn_end,_batch_len,_b_id,_loss.item(),ep)
 

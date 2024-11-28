@@ -43,7 +43,9 @@ class Image_KD_training(Image_training):
                  on_turn_end=None, 
                  dl_workers=4, 
                  prefetch_factor=2, 
+                 mixed_precision='fp16',
                  default_device='cpu', 
+                 extra_transforms=lambda x:x,
                  mode=Image_training.Mode.CLASSIFICATION):
         self.cfg=cfg
         self._ddp=torch.distributed.is_torchelastic_launched()
@@ -51,50 +53,50 @@ class Image_KD_training(Image_training):
         PipelineBase._Check_Attribute(self.cfg,'Teacher',torch.nn.Module)
         if self._ddp:
             PipelineBase._Check_Attribute(self.cfg,'Student',torch.nn.parallel.distributed.DistributedDataParallel)
-            cfg.net=torch.nn.parallel.distributed.DistributedDataParallel(torch.nn.Module()) # only for the attribute check in the super class
+            cfg.net=cfg.Student # only for the attribute check in the super class
             cfg.loss=lambda x: x
         else:
             PipelineBase._Check_Attribute(self.cfg,'Student',torch.nn.Module)
-            cfg.net=torch.nn.Module() # only for the attribute check in the super class
+            cfg.net=cfg.Student # only for the attribute check in the super class
             cfg.loss=lambda x: x
         PipelineBase._Check_Attribute(self.cfg,'KD_loss',(object,)) 
         
-        super().__init__(cfg, on_epoch_begin, on_epoch_end, on_turn_begin, on_turn_end, dl_workers, prefetch_factor, default_device, mode)
+        super().__init__(cfg, on_epoch_begin, on_epoch_end, on_turn_begin, on_turn_end, dl_workers, prefetch_factor, mixed_precision,default_device, mode,extra_transforms)
 
 
-    def Run(self,mix_precision=False,*args,**kwargs):
+    def Run(self,*args,**kwargs):
         CFG=self.cfg
         CFG.Teacher.eval()
         CFG.Student.train()
 
         scaler=accelerate.utils.get_grad_scaler()
-        for ep in range(CFG.EPOCH):
+        for _ep in range(CFG.EPOCH):
             
-            PipelineBase.call_hooks(self.on_epoch_begin,ep)
-            for _b_id,datum in enumerate(self._dl):
+            PipelineBase.call_hooks(self.on_epoch_begin,_ep)
+            for _2_b_id,datum in enumerate(self._dl):
 
                 x,y=self._unpack(datum)
 
-                PipelineBase.call_hooks(self.on_turn_begin,_b_id)
+                PipelineBase.call_hooks(self.on_turn_begin,_ep,_2_b_id)
                 
                 for _2_opt in CFG.opt : _2_opt.zero_grad(set_to_none=True)
                 
                 with self._accelerator.autocast():
                     _loss = CFG.KD_loss(x,y)
-                if mix_precision:
-                    scaler.scale(_loss).backward()
-                    for _2_opt in CFG.opt : scaler.step(_2_opt)
-                    scaler.update()
+                
+                    if self._accelerator.mixed_precision is None:
+                        _loss = CFG.KD_loss(x,y)
+                        _loss.backward()
+                        for _2_opt in CFG.opt: _2_opt.step()
+                    else:   
+                        scaler.scale(_loss).backward()
+                        for _2_opt in CFG.opt : scaler.step(_2_opt)
+                        scaler.update()
 
-                else:
-                    _loss = CFG.KD_loss(x,y)
-                    _loss.backward()
-                    for _2_opt in CFG.opt: _2_opt.step()
-                            
-                PipelineBase.call_hooks(self.on_turn_end,len(self._dl),_b_id,_loss.item(),ep)
+                PipelineBase.call_hooks(self.on_turn_end,len(self._dl),_2_b_id,_loss.item(),_ep)
 
             if hasattr(CFG,'lr_scheduler'):
                 for __lr_sch in CFG.lr_scheduler: __lr_sch.step()
 
-            PipelineBase.call_hooks(self.on_epoch_end,_loss.item(),ep)
+            PipelineBase.call_hooks(self.on_epoch_end,_loss.item(),_ep)
         return
