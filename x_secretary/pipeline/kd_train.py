@@ -84,14 +84,13 @@ class Image_KD_training(Image_training):
                 with self._accelerator.autocast():
                     _loss = CFG.KD_loss(x,y)
                 
-                    if self._accelerator.mixed_precision is None:
-                        _loss = CFG.KD_loss(x,y)
-                        _loss.backward()
-                        for _2_opt in CFG.opt: _2_opt.step()
-                    else:   
-                        scaler.scale(_loss).backward()
-                        for _2_opt in CFG.opt : scaler.step(_2_opt)
-                        scaler.update()
+                if self._accelerator.mixed_precision is None:
+                    _loss.backward()
+                    for _2_opt in CFG.opt: _2_opt.step()
+                else:   
+                    scaler.scale(_loss).backward()
+                    for _2_opt in CFG.opt : scaler.step(_2_opt)
+                    scaler.update()
 
                 PipelineBase.call_hooks(self.on_turn_end,len(self._dl),_2_b_id,_loss.item(),_ep)
 

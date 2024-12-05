@@ -79,10 +79,12 @@ class Training_Secretary(Secretary_base):
         pass
         
     def set_name_prefix(self,name_prefix):
+        self.sync()
         self.Log_dir.change_name(Log_dir.time_suffix_name(name_prefix))
         self._logger.name=name_prefix
         self._working_dir=self.Log_dir.saved_dir
         self._add_logger_file_handler(self._working_dir / 'log.txt',self._logging_level)
+        self.sync()
         return self
     
     @solo_chaining_method
