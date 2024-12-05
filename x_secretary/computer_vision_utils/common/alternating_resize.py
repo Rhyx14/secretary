@@ -1,4 +1,4 @@
-import torch
+import torch,logging
 from torchvision.transforms.v2.functional import resize_image
 import torch.distributed as dist
 class AlternatingResize(torch.nn.Module):
@@ -9,14 +9,20 @@ class AlternatingResize(torch.nn.Module):
 
     Only support torch.Tensor, i.e., transforms.v2, in the extra_transform part
     '''
-    def __init__(self,shape_list,frequency) -> None:
+    def __init__(self,shape_list,frequency, log=None | str | logging.Logger) -> None:
         super().__init__()
         self._index=0
-        
+
+        if log is not None:
+            if isinstance(log,str):
+                self._logger=logging.getLogger("log")
+            else :
+                self._logger=log
+
         self._shape_list=shape_list
 
         if isinstance(frequency,int):
-            self._freqency_list=[frequency for _ in range(frequency)]
+            self._freqency_list=[frequency for _ in range(len(shape_list))]
         else:
             assert len(frequency)==len(self._shape_list)
             self._freqency_list=frequency
@@ -33,7 +39,9 @@ class AlternatingResize(torch.nn.Module):
     def next_shape(self):
         self._current_shape=self._expanded_shape_list[self._index]
         self._index=(self._index+1) % len(self._expanded_shape_list)
-    
+        if self._logger is not None:
+            self._logger.info(f'resize to {self._current_shape}')
+
     def forward(self,x):
         return resize_image(x,self._current_shape)
     

@@ -24,7 +24,8 @@ class Image_classification_val(PipelineBase):
             on_turn_end=None,
             mix_precision='fp16',
             cpu=False,
-            extra_transforms=lambda x:x
+            extra_transforms=lambda x:x,
+            get_pred=None
         ) -> None:
 
         self.net=net
@@ -36,6 +37,9 @@ class Image_classification_val(PipelineBase):
         self.on_turn_begin=on_turn_begin
         self.on_turn_end=on_turn_end
         self._mix_precision=mix_precision
+
+        if get_pred is not None: self._get_pred=get_pred
+        else: self._get_pred=lambda x: x.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
 
         self._accelerator=Accelerator(
             dataloader_config=accelerate.utils.DataLoaderConfiguration(
@@ -54,7 +58,7 @@ class Image_classification_val(PipelineBase):
                 shuffle=False,
                 pin_memory=True)
             )
-                
+        
         super().__init__(self._accelerator.device,extra_transforms)
 
     def Run(self,loss=None,*args,**kwargs):
@@ -69,12 +73,12 @@ class Image_classification_val(PipelineBase):
 
                 # simulate snn
                 with self._accelerator.autocast():
-                    _out=self.net(x)
+                    _out=self.net(x) 
 
                 if loss is not None:
                     _loss = (_loss*_bid + loss(_out,label).item())/(_bid+1)
-
-                pred = _out.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+                
+                pred= self._get_pred(_out)
                 acc += pred.eq(label.view_as(pred)).sum().item() 
                 
                 PipelineBase.call_hooks(self.on_turn_end,_bid,_loss)
