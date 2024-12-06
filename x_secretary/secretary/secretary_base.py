@@ -114,16 +114,66 @@ class Secretary_base():
         with open(self._working_dir/filename,'w') as f:
             json.dump(obj,f)
         return self
-
-    def sync(self):
-        if(self._distributed):
-            dist.barrier()
     
     def load_json(self,filename):
         '''
         load from json file (tutti)
         '''
         return json.load(open(self._working_dir/filename,'r'))
+
+    def sync(self):
+        if(self._distributed):
+            dist.barrier()
+
+    def load_weight(self,net:torch.nn.Module,weight=str | dict | Path, strict=False,include:list=None,exclude:list=None):
+        """Load weight of the module.
+
+        load the weight from the path.
+
+        'include' means only specific layers are loaded.
+
+        'exclude' means layers other than designated layers will be loaded.
+
+        Args:
+            net (torch.nn.Module): torch module. if it is DataParallel or DistributedDataParallel, net.module will be selected automatically.
+            weight (str | dict | Path): weight path. Defaults to None.
+            strict (bool, optional): strict mode, same as the arg in torch.load. Defaults to False.
+            include (list, optional): include pattern (re). Defaults to None.
+            exclude (list, optional): exlude pattern (re). Defaults to None.
+
+        Returns:
+            None
+        """
+        if isinstance(net,(torch.nn.DataParallel,torch.nn.parallel.distributed.DistributedDataParallel)):
+            net=net.module
+
+        if isinstance(weight,(str,Path)):
+            self.logger.info(f"Loading weight from {weight}, including: {include}, excluding: {exclude}")
+            weight=torch.load(weight,map_location='cpu')
+        else:
+            self.logger.info(f"Loading weight, including: {include}, excluding: {exclude}")
+
+        if include is not None:
+            if exclude != None or strict !=False:
+                raise ValueError(f'"strict = True" and exclude list are not comaptible with "include".') 
+            tmp={}
+            for _key,_value in weight.items():
+                for _in_pattern in include:
+                    if re.match(_in_pattern,_key) is not None:
+                        tmp[_key]=_value
+            weight=tmp
+            
+        if exclude is not None:
+            if include != None or strict !=False:
+                raise ValueError(f'"strict = True" and include list are not comaptible with "exclude".') 
+            for _ex_pattern in exclude:
+                _keys=list(weight.keys())
+                for _key in _keys:
+                    if re.match(_ex_pattern,_key) is not None:
+                        del weight[_key]
+        
+        net.load_state_dict(weight,strict=strict)
+        return self
 
     def exist(self,filename):
         '''

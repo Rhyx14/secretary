@@ -9,15 +9,14 @@ class AlternatingResize(torch.nn.Module):
 
     Only support torch.Tensor, i.e., transforms.v2, in the extra_transform part
     '''
-    def __init__(self,shape_list,frequency, log=None | str | logging.Logger) -> None:
+    def __init__(self,shape_list,frequency, logger: str | logging.Logger | None = None) -> None:
         super().__init__()
         self._index=0
 
-        if log is not None:
-            if isinstance(log,str):
-                self._logger=logging.getLogger("log")
-            else :
-                self._logger=log
+        if isinstance(logger,str):
+            self._logger=logging.getLogger("log")
+        else:
+            self._logger=logger
 
         self._shape_list=shape_list
 

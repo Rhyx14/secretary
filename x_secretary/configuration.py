@@ -1,9 +1,11 @@
 import os,logging,sys,torch,argparse
+import torch.nn.parallel.distributed
 import json,yaml
 import torch.distributed as dist
 from typing import Any, Union
 import pathlib
 import re
+from .deprecated import deprecated
 class Configuration():
     def __init__(self,init_dict:dict=None,auto_record:bool=True,logger=None) -> None:
         '''
@@ -64,65 +66,6 @@ class Configuration():
                 raise NotImplementedError
         return self
 
-    def load_weight(self,net:torch.nn.Module,strict=False,weight_key=None,path=None,include:list=None,exclude:list=None):
-        """Load weight of networks.
-
-        If 'path' is given, load the weight from the path.
-        
-        else if 'weight_key' is given, load the dict directly from CFG.<weight_key>.
-
-        'include' means only specific layers are loaded.
-
-        'exclude' means layers other than designated layers will be loaded.
-
-        Args:
-            net (torch.nn.Module): the torch module
-            strict (bool, optional): strict mode, same as the arg in torch.load. Defaults to False.
-            weight_key (str, optional): default key of weight in the object. Defaults to 'PRE_TRAIN'.
-            path (_type_, optional): weight path. Defaults to None.
-            include (list, optional): include pattern (re). Defaults to None.
-            exclude (list, optional): exlude pattern (re). Defaults to None.
-
-        Returns:
-            None
-        """
-        _weight:dict=None
-        if path is not None:
-            _weight=torch.load(path,map_location='cpu')
-            self.logger.info(f"Loading weight from {path}.")
-
-        elif weight_key is not None and hasattr(self,weight_key):
-            _weight=torch.load(self.__dict__[weight_key],map_location='cpu')
-            self.logger.info(f"Loading weight from CFG.{weight_key}.")
-        
-        if _weight is not None:
-            if include !=None and exclude !=None:
-                raise ValueError('param "include" and "exclude" are exclusive')  
-
-            if strict==True : raise ValueError('"strict = True" is not compatible with "include" or "exclude".')  
-
-            if include is not None:
-                _tmp={}
-                for _key,_value in _weight.items():
-                    for _in_pattern in include:
-                        if re.match(_in_pattern,_key) is not None:
-                            _tmp[_key]=_value
-                _weight=_tmp
-                
-            if exclude is not None:
-                for _ex_pattern in exclude:
-                    _keys=list(_weight.keys())
-                    for _key in _keys:
-                        if re.match(_ex_pattern,_key) is not None:
-                            del _weight[_key]
-            
-            net.load_state_dict(_weight,strict=strict)
-            self.logger.info(f"Loading weight from {path}, including: {include}, excluding: {exclude}")
-            return self
-        
-        self.logger.warning(f'No weights has been loaded !!!')
-        return self
-    
     def __str__(self) -> str:
         ls=''
         for k,v in self.__dict__.items():
