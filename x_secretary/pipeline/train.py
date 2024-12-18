@@ -4,6 +4,10 @@ import torch.distributed
 from torch.utils.data.dataloader import DataLoader
 from .pipelinebase import PipelineBase
 from ..utils.set_seeds import seed_worker,get_generator
+
+from .empty_warmup_LRScheduler import EmptyWarmup,EmptyLRScheduler
+from ..utils.larc import LARC
+
 import accelerate
 class Image_training(PipelineBase):
     '''
@@ -83,10 +87,12 @@ class Image_training(PipelineBase):
         else:
             PipelineBase._Check_Attribute(self._cfg,'net',torch.nn.Module)
         PipelineBase._Check_Attribute(self._cfg,'loss')
-        PipelineBase._Check_Attribute(self._cfg,'opt',(list,))
+        PipelineBase._Check_Attribute(self._cfg,'opt',(list,torch.optim.Optimizer,LARC))
         PipelineBase._Check_Attribute(self._cfg,'train_dataset',(torch.utils.data.Dataset,))
         PipelineBase._Check_Attribute(self._cfg,'BATCH_SIZE',(int,))
         PipelineBase._Check_Attribute(self._cfg,'EPOCH',(int,))
+
+        self._init_opt_lr_scheduler()
 
         self._accelerator=accelerate.Accelerator(
             mixed_precision=mixed_precision,
@@ -112,6 +118,26 @@ class Image_training(PipelineBase):
             case Image_training.Mode.YOLO_DETECTION: self._unpack = self._unpack_cls
             case _ : raise  NotImplementedError(f'Pipleline for {mode} hasn''t been implemented yet.')
 
+    def _init_opt_lr_scheduler(self):
+        if not isinstance(self._cfg.opt,list):
+            self.opt=[self._cfg.opt]
+
+        if hasattr(self._cfg,'lr_scheduler'):
+            if isinstance(self._cfg.lr_scheduler,list):
+                self._lr_scheduler=self._cfg.lr_scheduler
+            else:
+                self._lr_scheduler=[self._cfg.lr_scheduler]
+        else:
+            self._lr_scheduler=[EmptyLRScheduler()]
+            
+        if hasattr(self._cfg,'warmup_scheduler'):
+            if isinstance(self._cfg.warmup_scheduler,list):
+                self._warmup_scheduler=self._cfg.warmup_scheduler
+            else:
+                self._warmup_scheduler=[self._cfg.warmup_scheduler]
+        else:
+            self._warmup_scheduler=[EmptyWarmup()]
+
     def Run(self,*args,**kwargs):
         CFG=self._cfg
 
@@ -127,7 +153,7 @@ class Image_training(PipelineBase):
                 x,y=self._unpack(datum)
                 PipelineBase.call_hooks(self.on_turn_begin,ep,_b_id)
 
-                for __opt in CFG.opt : __opt.zero_grad(set_to_none=True)
+                for __opt in self.opt : __opt.zero_grad(set_to_none=True)
 
                 with self._accelerator.autocast():
                     _out=CFG.net(x)
@@ -135,16 +161,17 @@ class Image_training(PipelineBase):
                     
                 if self._accelerator.mixed_precision is None:
                     _loss.backward()
-                    for __opt in CFG.opt : __opt.step()
+                    for __opt in self.opt : __opt.step()
                 else:
                     scaler.scale(_loss).backward()
-                    for __opt in CFG.opt : scaler.step(__opt)
+                    for __opt in self.opt : scaler.step(__opt)
                     scaler.update()                 
 
                 PipelineBase.call_hooks(self.on_turn_end,_batch_len,_b_id,_loss.item(),ep)
 
-            if hasattr(CFG,'lr_scheduler'):
-                for __lr_sch in CFG.lr_scheduler: __lr_sch.step()
+            for _lr_sch,_warmup_sch in zip(self._lr_scheduler,self._warmup_scheduler):
+                with _warmup_sch.dampening():
+                    _lr_sch.step()
 
             PipelineBase.call_hooks(self.on_epoch_end,_loss.item(),ep)
         return
