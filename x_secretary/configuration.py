@@ -53,17 +53,20 @@ class Configuration():
         self.__setattr__(name,value)
         return value
     
-    def update_from_files(self,path:pathlib.Path):
-        path=pathlib.Path(path)
-        match path.suffix:
-            case '.json':
-                self.update(json.loads(path.read_text('uft-8')))
-            case '.yaml':
-                stream=path.open()
-                self.update(yaml.safe_load(stream))
-                stream.close()
-            case _ :
-                raise NotImplementedError
+    def update_from_files(self,path:pathlib.Path | list | str):
+        if not isinstance(path,list):
+            path=[path]
+        file_list=map(lambda _p : pathlib.Path(_p), path)
+        for _p in file_list:
+            match _p.suffix:
+                case '.json':
+                    self.update(json.loads(_p.read_text('uft-8')))
+                case '.yaml':
+                    stream=_p.open()
+                    self.update(yaml.safe_load(stream))
+                    stream.close()
+                case _ :
+                    raise NotImplementedError
         return self
 
     def __str__(self) -> str:
