@@ -121,7 +121,9 @@ class Image_training(PipelineBase):
     def _init_opt_lr_scheduler(self):
         if not isinstance(self._cfg.opt,list):
             self.opt=[self._cfg.opt]
-
+        else:
+            self.opt=self._cfg.opt
+            
         if hasattr(self._cfg,'lr_scheduler'):
             if isinstance(self._cfg.lr_scheduler,list):
                 self._lr_scheduler=self._cfg.lr_scheduler

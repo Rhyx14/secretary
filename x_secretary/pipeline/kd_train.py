@@ -94,8 +94,9 @@ class Image_KD_training(Image_training):
 
                 PipelineBase.call_hooks(self.on_turn_end,len(self._dl),_2_b_id,_loss.item(),_ep)
 
-            if hasattr(CFG,'lr_scheduler'):
-                for __lr_sch in CFG.lr_scheduler: __lr_sch.step()
+            for _lr_sch,_warmup_sch in zip(self._lr_scheduler,self._warmup_scheduler):
+                with _warmup_sch.dampening():
+                    _lr_sch.step()
 
             PipelineBase.call_hooks(self.on_epoch_end,_loss.item(),_ep)
         return
