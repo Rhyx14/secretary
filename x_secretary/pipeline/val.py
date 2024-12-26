@@ -1,5 +1,6 @@
 import torch,accelerate
-from .pipelinebase import PipelineBase,DDP_progressbar
+from .pipelinebase import PipelineBase
+from .misc import DDP_progressbar
 from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
 from accelerate import Accelerator
@@ -24,7 +25,7 @@ class Image_classification_val(PipelineBase):
             on_turn_end=None,
             mix_precision='fp16',
             cpu=False,
-            extra_transforms=lambda x:x,
+            data_hooks=None,
             get_pred=None
         ) -> None:
 
@@ -59,7 +60,7 @@ class Image_classification_val(PipelineBase):
                 pin_memory=True)
             )
         
-        super().__init__(self._accelerator.device,extra_transforms)
+        super().__init__(self._accelerator.device,data_hooks)
 
     def Run(self,loss=None,*args,**kwargs):
         with torch.no_grad():
@@ -67,9 +68,8 @@ class Image_classification_val(PipelineBase):
             _loss=torch.Tensor([0]).to(self._accelerator.device)
 
             for _bid,datum in enumerate(DDP_progressbar(self._dl)):
-                x,label=self._unpack_cls(datum)
-
-                PipelineBase.call_hooks(self.on_turn_begin)
+                x,label=PipelineBase.call_hooks(self.data_hooks,datum)
+                PipelineBase.call_actions(self.on_turn_begin)
 
                 # simulate snn
                 with self._accelerator.autocast():
@@ -81,7 +81,7 @@ class Image_classification_val(PipelineBase):
                 pred= self._get_pred(_out)
                 acc += pred.eq(label.view_as(pred)).sum().item() 
                 
-                PipelineBase.call_hooks(self.on_turn_end,_bid,_loss)
+                PipelineBase.call_actions(self.on_turn_end,_bid,_loss)
 
             acc=self._accelerator.reduce(acc,reduction='sum').item()
             _loss=self._accelerator.reduce(_loss,reduction='mean').item()
@@ -104,9 +104,8 @@ class Image_plain_val(Image_classification_val):
             _loss=torch.Tensor([0]).to(self._accelerator.device)
 
             for _bid,datum in enumerate(DDP_progressbar(self._dl)):
-                x,label=self._unpack_cls(datum)
-
-                PipelineBase.call_hooks(self.on_turn_begin)
+                x,label=PipelineBase.call_hooks(self.data_hooks,datum)
+                PipelineBase.call_actions(self.on_turn_begin)
                 # simulate
                 with self._accelerator.autocast():
                     _out=self.net(x)
@@ -114,7 +113,7 @@ class Image_plain_val(Image_classification_val):
                 if loss is not None:
                     _loss = (_loss*_bid + loss(_out,label).item())/(_bid+1)
 
-                PipelineBase.call_hooks(self.on_turn_end,_bid,_loss)
+                PipelineBase.call_actions(self.on_turn_end,_bid,_loss)
 
             _loss=self._accelerator.reduce(_loss,reduction='mean').item()
         return _loss
@@ -162,18 +161,17 @@ class Image_segmentation_val(PipelineBase):
                       pin_memory=True)
         with torch.no_grad():
             for iter, datum in enumerate(tqdm(dl,leave=False)):
-               inputs = datum['X'].to(self.default_device)
-               gt=datum['Y'].cpu().numpy()
+               inputs,gt= PipelineBase.call_hooks(self.data_hooks,datum)
 
                # simulate snn
-               PipelineBase.call_hooks(self.on_turn_begin)
+               PipelineBase.call_actions(self.on_turn_begin)
                output = self.net(inputs)
                output = output.data.cpu().numpy()
 
                pred=output.argmax(axis=1)
                
                metric.add_batch(gt,pred)
-               PipelineBase.call_hooks(self.on_turn_end,iter)
+               PipelineBase.call_actions(self.on_turn_end,iter)
 
             _acc=metric.Pixel_Accuracy()
             _miou=metric.Mean_Intersection_over_Union()

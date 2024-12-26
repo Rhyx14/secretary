@@ -27,13 +27,16 @@ class Image_KD_training(Image_training):
     }
 
     ---------
-    on_epoch_begin : hooks before each epoch, with parameter (ep)
+    the pipeline will pass training_status:dict to each actions, which contains keys:
 
-    on_epoch_end : hooks after each epoch, with parameter (loss,ep)
+    batch_len: the number of mini-batches in one epoch
 
-    on_turn_begin : hooks before each training turn, with parameter (ep, batch_id)
+    ep: the index of current epoch
 
-    on_turn_end : hooks after each training turn, with parameter (batch len,batch_id,loss,ep)
+    batch_id: the index of mini-batch in this epoch
+
+    loss: the loss value (value not torch.Tensor)
+
     '''
     def __init__(self, 
                  cfg, 
@@ -45,8 +48,7 @@ class Image_KD_training(Image_training):
                  prefetch_factor=2, 
                  mixed_precision='fp16',
                  default_device='cpu', 
-                 extra_transforms=lambda x:x,
-                 mode=Image_training.Mode.CLASSIFICATION):
+                 data_hooks=None):
         self.cfg=cfg
         self._ddp=torch.distributed.is_torchelastic_launched()
         self.loss=None # only for the attribute check in the super class
@@ -61,42 +63,10 @@ class Image_KD_training(Image_training):
             cfg.loss=lambda x: x
         PipelineBase._Check_Attribute(self.cfg,'KD_loss',(object,)) 
         
-        super().__init__(cfg, on_epoch_begin, on_epoch_end, on_turn_begin, on_turn_end, dl_workers, prefetch_factor, mixed_precision,default_device, mode,extra_transforms)
+        super().__init__(cfg, on_epoch_begin, on_epoch_end, on_turn_begin, on_turn_end, dl_workers, prefetch_factor, mixed_precision,default_device, data_hooks)
 
 
-    def Run(self,*args,**kwargs):
-        CFG=self.cfg
-        CFG.Teacher.eval()
-        CFG.Student.train()
-
-        scaler=accelerate.utils.get_grad_scaler()
-        for _ep in range(CFG.EPOCH):
-            
-            PipelineBase.call_hooks(self.on_epoch_begin,_ep)
-            for _2_b_id,datum in enumerate(self._dl):
-
-                x,y=self._unpack(datum)
-
-                PipelineBase.call_hooks(self.on_turn_begin,_ep,_2_b_id)
-                
-                for _2_opt in CFG.opt : _2_opt.zero_grad(set_to_none=True)
-                
-                with self._accelerator.autocast():
-                    _loss = CFG.KD_loss(x,y)
-                
-                if self._accelerator.mixed_precision is None:
-                    _loss.backward()
-                    for _2_opt in CFG.opt: _2_opt.step()
-                else:   
-                    scaler.scale(_loss).backward()
-                    for _2_opt in CFG.opt : scaler.step(_2_opt)
-                    scaler.update()
-
-                PipelineBase.call_hooks(self.on_turn_end,len(self._dl),_2_b_id,_loss.item(),_ep)
-
-            for _lr_sch,_warmup_sch in zip(self._lr_scheduler,self._warmup_scheduler):
-                with _warmup_sch.dampening():
-                    _lr_sch.step()
-
-            PipelineBase.call_hooks(self.on_epoch_end,_loss.item(),_ep)
-        return
+    def _get_loss(self, datum, CFG):
+        with self._accelerator.autocast():
+            _loss = CFG.KD_loss(datum[0],datum[1])
+        return _loss

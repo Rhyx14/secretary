@@ -5,7 +5,7 @@ from torch.utils.data.dataloader import DataLoader
 from .pipelinebase import PipelineBase
 from ..utils.set_seeds import seed_worker,get_generator
 
-from .empty_warmup_LRScheduler import EmptyWarmup,EmptyLRScheduler
+from .empty_warmup_LR_Scheduler import EmptyWarmup,EmptyLRScheduler
 from ..utils.larc import LARC
 
 import accelerate
@@ -33,34 +33,29 @@ class Image_training(PipelineBase):
 
     }
 
+    the pipeline will pass training_status:dict to each actions, which contains keys:
+
+    batch_len: the number of mini-batches in one epoch
+
+    ep: the index of current epoch
+
+    batch_id: the index of mini-batch in this epoch
+
+    loss: the loss value (value not torch.Tensor)
+
     ---------
-    on_epoch_begin : hooks before each epoch, with parameter (ep)
+    on_epoch_begin : actions before each epoch, with parameter
 
-    on_epoch_end : hooks after each epoch, with parameter (loss,ep)
+    on_epoch_end : actions after each epoch, with parameter
 
-    on_turn_begin : hooks before each training turn, with parameter (ep, batch_id)
+    on_turn_begin : actions before each training turn, with parameter
 
-    on_turn_end : hooks after each training turn, with parameter (batch len,batch_id,loss,ep)
+    on_turn_end : actions after each training turn, with parameter
 
     mix_precision: Choose from 'no','fp16','bf16' or 'fp8', achieved via accelerate
 
     mode: see Image_training.Mode
     '''
-    class Mode(Enum):
-        '''
-        CLASSIFICATION: for classsification
-
-        CLASSIFICATION_GPU: for classsification, with gpu transforms (require self.transforms)
-
-        SEGMENTATION: for segmentation
-
-        YOLO_DETECTION: for yolov1 based detection
-        '''
-        CLASSIFICATION=1
-        CLASSIFICATION_GPU=2
-        SEGMENTATION=3
-        YOLO_DETECTION=4
-
     def __init__(self,
         cfg,
         on_epoch_begin=None,
@@ -70,10 +65,9 @@ class Image_training(PipelineBase):
         dl_workers=4,prefetch_factor=2,
         mixed_precision='fp16',
         default_device='cpu',
-        mode=Mode.CLASSIFICATION,
-        extra_transforms=lambda x:x
+        data_hooks=None
         ):
-
+        
         self._cfg=cfg
         self._ddp=torch.distributed.is_torchelastic_launched()
         self.on_epoch_end=on_epoch_end
@@ -110,19 +104,20 @@ class Image_training(PipelineBase):
                 generator=get_generator(),
                 drop_last=True)
         )
-        super().__init__(default_device,extra_transforms)
-
-        match mode:
-            case Image_training.Mode.CLASSIFICATION: self._unpack = self._unpack_cls
-            case Image_training.Mode.SEGMENTATION  : self._unpack = self._unpack_seg
-            case Image_training.Mode.YOLO_DETECTION: self._unpack = self._unpack_cls
-            case _ : raise  NotImplementedError(f'Pipleline for {mode} hasn''t been implemented yet.')
+        super().__init__(default_device,data_hooks)
 
     def _init_opt_lr_scheduler(self):
+        '''
+        If there is a single opt, pack it into a list.
+
+        If lr_scheduler and warmup_scheduler is not set, an empty scheduler will be set 
+        '''
         if not isinstance(self._cfg.opt,list):
             self.opt=[self._cfg.opt]
+            self._opt_enable_list=[True]
         else:
             self.opt=self._cfg.opt
+            self._opt_enable_list=[True for _ in range(len(self.opt))]
             
         if hasattr(self._cfg,'lr_scheduler'):
             if isinstance(self._cfg.lr_scheduler,list):
@@ -140,40 +135,68 @@ class Image_training(PipelineBase):
         else:
             self._warmup_scheduler=[EmptyWarmup()]
 
+    def _zero_grad_opt(self):
+        for _opt,_enable_flag in zip(self.opt,self._opt_enable_list):
+            if _enable_flag:
+                _opt.zero_grad(set_to_none=True)
+
+    def _step_opt(self,scaler=None):
+        for _opt,_enable_flag in zip(self.opt,self._opt_enable_list):
+            if _enable_flag:
+                if scaler == None:
+                    _opt.step()
+                else:
+                    scaler.step(_opt)
+
+
+    def enable_opt(self,list : list[bool]):
+        '''
+        Enable optimizer during training, 'True' marks enabled
+        '''
+        self._opt_enable_list=list
+
+    def _get_loss(self,datum,CFG):
+        '''
+        Get the final loss tensor for back-propagation
+        '''
+        with self._accelerator.autocast():
+            _out=CFG.net(datum[0])
+            _loss = CFG.loss(_out,datum[1])
+        return _loss
+
     def Run(self,*args,**kwargs):
         CFG=self._cfg
-
-        CFG.net.train()
         
         scaler=accelerate.utils.get_grad_scaler()
-        _batch_len=len(self._dl)
-        for ep in range(CFG.EPOCH):
-            
-            PipelineBase.call_hooks(self.on_epoch_begin,ep)
+        batch_len=len(self._dl)
+        training_status={'batch_len':batch_len,'pipline_object':self}
+        for _ep in range(CFG.EPOCH):    
+            training_status['ep']=_ep
+            PipelineBase.call_actions(self.on_epoch_begin,training_status)
             for _b_id,datum in enumerate(self._dl):
+                
+                training_status['batch_id']=_b_id
+                datum=PipelineBase.call_hooks(self.data_hooks,datum)
+                PipelineBase.call_actions(self.on_turn_begin,training_status)
 
-                x,y=self._unpack(datum)
-                PipelineBase.call_hooks(self.on_turn_begin,ep,_b_id)
+                self._zero_grad_opt()
 
-                for __opt in self.opt : __opt.zero_grad(set_to_none=True)
-
-                with self._accelerator.autocast():
-                    _out=CFG.net(x)
-                    _loss = CFG.loss(_out,y)
+                _loss=self._get_loss(datum,CFG)
                     
                 if self._accelerator.mixed_precision is None:
                     _loss.backward()
-                    for __opt in self.opt : __opt.step()
+                    self._step_opt()
                 else:
                     scaler.scale(_loss).backward()
-                    for __opt in self.opt : scaler.step(__opt)
-                    scaler.update()                 
+                    self._step_opt(scaler)
+                    scaler.update()
 
-                PipelineBase.call_hooks(self.on_turn_end,_batch_len,_b_id,_loss.item(),ep)
+                training_status['loss']=_loss.item()
+                PipelineBase.call_actions(self.on_turn_end,training_status)
 
             for _lr_sch,_warmup_sch in zip(self._lr_scheduler,self._warmup_scheduler):
                 with _warmup_sch.dampening():
                     _lr_sch.step()
 
-            PipelineBase.call_hooks(self.on_epoch_end,_loss.item(),ep)
+            PipelineBase.call_actions(self.on_epoch_end,training_status)
         return

@@ -3,39 +3,26 @@ import os
 from typing import Any
 from contextlib import contextmanager
 
-from tqdm import tqdm
-import torch.distributed as dist
-def DDP_progressbar(iterator):
-    if dist.is_torchelastic_launched() and dist.get_rank()!=0:
-        return iterator
-    else:
-        return tqdm(iterator,leave=False)
+class Default_DataHook:
+    @staticmethod
+    def unpack_seg_train(datum,device):
+        return datum['X'].to(device),datum['Y'].to(device)
     
+    @staticmethod
+    def unpack_seg_val(datum,device):    
+        inputs = datum['X'].to(device)
+        gt=datum['Y'].cpu().numpy()
+        return inputs,gt
+    
+    @staticmethod
+    def unpack_cuda(datum):
+        return datum[0].cuda(),datum[1].cuda()
 
 class PipelineBase():
-    def __init__(self,default_device,extra_transforms) -> None:
+    def __init__(self,default_device,data_hooks) -> None:
         self.default_device=default_device
-        self._extra_transforms=extra_transforms
+        self.data_hooks=data_hooks
         pass
-    
-    def _unpack_seg(self,datum):
-        return datum['X'].to(self.default_device),datum['Y'].to(self.default_device)
-
-    def _unpack_yolo(self,datum):
-        return datum[0].to(self.default_device),datum[1].to(self.default_device) 
-    
-    def _unpack_cls(self,datum):
-        x=datum[0].to(self.default_device)
-        y=datum[1].to(self.default_device)
-        with torch.no_grad():
-            x=self._extra_transforms(x)
-        return x,y
-    
-    def _unpack(self,datum):
-        '''
-        unpack data out from the dataloader, default setting is for classification task (return (x, label), then to the device) 
-        '''
-        return self._unpack_cls(datum)
     
     def Run(self,*args,**kwds):
         raise NotImplementedError
@@ -44,13 +31,23 @@ class PipelineBase():
         return self.Run(*args,**kwds)
 
     @staticmethod
+    def call_actions(actions,*args):
+        if(actions is not None):
+            if isinstance(actions,list):
+                for _act in actions:
+                    _act(*args)
+            else:
+                actions(*args)
+
+    @staticmethod
     def call_hooks(hooks,*args):
         if(hooks is not None):
             if isinstance(hooks,list):
-                for h in hooks:
-                    h(*args)
+                for _hook in hooks:
+                    args=_hook(*args)
             else:
-                hooks(*args)
+                args=hooks(*args)
+        return args
 
     @staticmethod
     def _Check_Attribute(obj,key:str,type: tuple | Any =None):

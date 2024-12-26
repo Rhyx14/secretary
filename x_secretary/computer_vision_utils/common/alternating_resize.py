@@ -41,8 +41,11 @@ class AlternatingResize(torch.nn.Module):
         if self._logger is not None:
             self._logger.info(f'resize to {self._current_shape}')
 
-    def forward(self,x):
-        return resize_image(x,self._current_shape)
+    def forward(self,*args):
+        if len(args)==1:
+            return resize_image(args[0],self._current_shape)
+        else:
+            return resize_image(args[0],self._current_shape),*args[1:]
     
     def extra_repr(self) -> str:
         return f'shapes={self._shape_list}, freq={self._freqency_list}'
