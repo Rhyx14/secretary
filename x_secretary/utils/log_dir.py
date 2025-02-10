@@ -24,9 +24,15 @@ class Log_dir:
         pass
 
     def dir(self):
+        '''
+        Get the dir as Pathlib.Path
+        '''
         return Path(self.saved_dir)
     
     def dir_str(self):
+        '''
+        Get the dir as str
+        '''
         return self.saved_dir
 
     def create_dir(self):

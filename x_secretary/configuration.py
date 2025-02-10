@@ -1,10 +1,10 @@
-import os,logging,sys,torch,argparse
+import os,sys,torch,argparse
 import torch.nn.parallel.distributed
 import json,yaml
 import torch.distributed as dist
 from typing import Any, Union
 import pathlib
-import re
+from loguru import logger
 from .deprecated import deprecated
 class Configuration():
     def __init__(self,init_dict:dict=None,auto_record:bool=True,logger=None) -> None:
@@ -18,17 +18,6 @@ class Configuration():
         self._auto_record=auto_record
         self._change_set=set()
 
-        if logger is None:
-            self.logger=logging.getLogger('CONFIGURATION')
-            logger_handler=logging.StreamHandler(sys.stdout)
-            logger_handler.setFormatter(logging.Formatter('%(asctime)s-<%(name)s>[%(levelname)s] %(message)s'))
-            self.logger.addHandler(logger_handler)
-            self.logger.setLevel(logging.INFO)
-            self.logger.propagate=False
-                
-        else:
-            self.logger=logger
-
         self._parser=argparse.ArgumentParser()
         self.NAME='default'
 
@@ -37,9 +26,6 @@ class Configuration():
 
         if init_dict is not None:
             self.update(init_dict) 
-
-    def set_logger(self,logger):
-        self.logger=logger
 
     def update(self,params:dict):
         for k,v in params.items():

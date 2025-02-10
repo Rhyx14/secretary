@@ -1,13 +1,10 @@
 '''
 负责程序输出与输入（控制台，权重文件，日志文件）
 '''
-import logging
+import datetime,os,json,re,torch
+from loguru import logger
 from pathlib import Path
-import datetime
-import os
-import json
 import torch.distributed as dist
-import torch
 from ..utils.autodl import info_wechat_autodl
 from .solo_method import solo_method,solo_method_with_default_return,solo_chaining_method
 from ..utils.data_recorder import data_recorder
@@ -16,19 +13,7 @@ from functools import wraps
 
 class Secretary_base():
 
-    def __init__(self,working_dir:Path,logger_name:str='secretary',logging_level=logging.INFO) -> None:
-        
-        # default objects
-        self._logger=logging.getLogger(logger_name)
-        self._logger.propagate=False
-        self._logging_level=logging_level
-        self._logger.setLevel(logging_level)
-
-        self._default_logging_formatter=logging.Formatter('%(asctime)s-<%(name)s>[%(levelname)s] %(message)s')
-        _ch=logging.StreamHandler()
-        _ch.setLevel(self._logging_level)
-        _ch.setFormatter(self._default_logging_formatter)
-        self._logger.addHandler(_ch)
+    def __init__(self,working_dir:Path) -> None:
 
         self._time_stamps=None
         self._data=data_recorder()
@@ -46,10 +31,6 @@ class Secretary_base():
         
         self._working_dir=working_dir
 
-    @property
-    def logger(self):
-        return self._logger
-
     @solo_chaining_method
     def print_solo(self,str,**kwargs):
         '''
@@ -62,7 +43,7 @@ class Secretary_base():
         '''
         logger debug (tutti)
         '''
-        self._logger.debug(msg)
+        logger.debug(msg)
 
     @solo_method
     def solo(self,callable,*args,**kwargs):
@@ -76,14 +57,14 @@ class Secretary_base():
         '''
         log information (solo) -> self
         '''
-        self._logger.info(msg)
+        logger.info(msg)
         return self
 
     def info_all(self,msg):
         '''
         log information (tutti) -> self
         '''
-        self._logger.info(msg)
+        logger.info(msg)
         return self
     
     @solo_chaining_method
@@ -91,14 +72,14 @@ class Secretary_base():
         '''
         log warning (solo) -> self
         '''
-        self._logger.warning(msg)
+        logger.warning(msg)
         return self
 
     def warning_all(self,msg):
         '''
         log warning (tutti) -> self
         '''
-        self._logger.warning(msg)
+        logger.warning(msg)
         return self
 # ------------------------------- data record -------------------------------
     @property
@@ -214,7 +195,7 @@ class Secretary_base():
         else:
             now=datetime.datetime.now()
             span=now-self._time_stamps
-            self._logger.info(f'span === {str(span)}')
+            logger.info(f'span === {str(span)}')
             self._time_stamps=now
         return self
 

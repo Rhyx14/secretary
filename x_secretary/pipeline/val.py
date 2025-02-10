@@ -15,7 +15,6 @@ class Image_classification_val(PipelineBase):
     mix_precision: Choose from 'no','fp16','bf16' or 'fp8' (achieved via accelerate)
     '''
     def __init__(self,
-            logger,
             batch_size,
             net,
             dataset,
@@ -30,7 +29,6 @@ class Image_classification_val(PipelineBase):
         ) -> None:
 
         self.net=net
-        self.logger=logger
         self.batch_size=batch_size
         self.dataset=dataset
         self.dl_workers=dl_workers
@@ -128,7 +126,6 @@ class Image_segmentation_val(PipelineBase):
     on_turn_end : hooks after each training turn, with parameter (batch_id)
     '''
     def __init__(self,
-            logger,
             batch_size,
             n_classes,
             net:torch.nn.Module,
@@ -139,7 +136,6 @@ class Image_segmentation_val(PipelineBase):
             on_turn_begin=None,
             on_turn_end=None,):
         self.net=net
-        self.logger=logger
         self.batch_size=batch_size
         self.n_classes=n_classes
         self.dataset=dataset

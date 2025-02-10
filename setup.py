@@ -15,7 +15,7 @@ setup(
           'Programming Language :: Python', 'Intended Audience :: Developers',
           'Programming Language :: Python :: 3.10',
       ],
-      install_requires=['torch>=2.0.1','opencv-python','tqdm','pyyaml','accelerate>=1.1.0','torchvision>=0.15','pytorch_warmup'],
+      install_requires=['torch>=2.0.1','opencv-python','tqdm','pyyaml','accelerate>=1.1.0','torchvision>=0.15','pytorch_warmup','loguru'],
       scripts=['bin/xsrun'],
     #   entry_points={'console_scripts': ['pmm=pimm.pimm_module:main']},
     #   package_data={'': ['*.json']},

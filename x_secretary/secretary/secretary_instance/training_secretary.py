@@ -1,16 +1,17 @@
-import logging,os,uuid
+import os,uuid,sys,torch
 from ..secretary_base import Secretary_base
 from ..solo_method import solo_method,solo_chaining_method,solo_method_with_default_return
 import torch.distributed as dist
 from ...utils.sys_info import get_sys_info
 from ...utils.log_dir import Log_dir
-import torch
+from loguru import logger
 from pathlib import Path
 from ...utils.faster_save_on_cpu import offload_module,restore_offload
 from ...configuration import Configuration
+LOGGER_FMT='<blue>{time:YYYY-MM-DD HH:mm:ss Z}</blue> [<level>{level}</level>] <green>{name}:{line}</green><yellow>#</yellow> {message}'
 class Training_Secretary(Secretary_base):
-    def __init__(self,saved_dir='.',name_prefix='Training_Secretary',logging_level=logging.INFO) -> None:
-        super().__init__(Path(saved_dir),logger_name=name_prefix,logging_level=logging_level)
+    def __init__(self,saved_dir='.',logging_level='INFO', saving_main_script=True) -> None:
+        super().__init__(Path(saved_dir))
 
         # create folder
         self.Log_dir=Log_dir(
@@ -18,12 +19,29 @@ class Training_Secretary(Secretary_base):
             root_path=self._working_dir,
             distributed=self._distributed
         ).create_dir()
+        self._working_dir=self.Log_dir.dir()
 
+        logger.remove()
+        logger.add(sys.stderr,format=LOGGER_FMT)
         # 保存日志
-        self._add_logger_file_handler(self.Log_dir.dir()/'log.txt',logging_level)
+        self._log_file_handler=logger.add(str(self._working_dir/'log.txt'),level=logging_level,format=LOGGER_FMT)
+        self._logging_level=logging_level
+
+        # 保存启动脚本
+        if saving_main_script:
+            self.save_main_script()
 
         # 打印环境信息
         self._log_env()
+
+    @solo_chaining_method
+    def save_main_script(self):
+        '''
+        Saving the running script
+        '''
+        s=Path.read_text(Path(sys.argv[0]))
+        (self._working_dir/ sys.argv[0] ).write_text(s,encoding='utf-8')
+        return self
 
     @solo_method
     def _log_env(self):
@@ -33,7 +51,7 @@ class Training_Secretary(Secretary_base):
         saving to 'env.txt' 
         '''
         # print(cfg_str)
-        with open(self.Log_dir.dir()/'env.txt','w') as f:
+        with open(self._working_dir/'env.txt','w') as f:
             f.write(get_sys_info())
 
     @solo_chaining_method
@@ -69,21 +87,12 @@ class Training_Secretary(Secretary_base):
             f.write('\n')
         return self
         
-    def _add_logger_file_handler(self,path,level):
-        if hasattr(self,'_logger_filehandler'):
-            self.logger.removeHandler(self._logger_filehandler)
-        self._logger_filehandler=logging.FileHandler(path)
-        self._logger_filehandler.setFormatter(self._default_logging_formatter)
-        self._logger_filehandler.setLevel(self._logging_level)
-        self._logger.addHandler(self._logger_filehandler)
-        pass
-        
     def set_name_prefix(self,name_prefix):
         self.sync()
         self.Log_dir.change_name(Log_dir.time_suffix_name(name_prefix))
-        self._logger.name=name_prefix
         self._working_dir=self.Log_dir.saved_dir
-        self._add_logger_file_handler(self._working_dir / 'log.txt',self._logging_level)
+        logger.remove(self._log_file_handler)
+        self._log_file_handler=logger.add(str(self._working_dir/'log.txt'),level=self._logging_level,format=LOGGER_FMT)
         self.sync()
         return self
     
@@ -106,22 +115,22 @@ class Training_Secretary(Secretary_base):
             if best_mode:
 
                 if best_value is None:
-                    self.logger.info(f'invaild best_value, pass')
+                    logger.info(f'invaild best_value, pass')
                 else:
                     if hasattr(self,'_best_value'):
                         if best_value>self._best_value:
                             self._best_value=best_value
                             torch.save(_net.state_dict(),path)
-                            self.logger.info(f'saved at {path}')
+                            logger.info(f'saved at {path}')
                         else:
-                            self.logger.info(f'not the best ({self._best_value}), pass')
+                            logger.info(f'not the best ({self._best_value}), pass')
                     else: # the first time saving the best
                         setattr(self,'_best_value',best_value)
                         torch.save(_net.state_dict(),path)
-                        self.logger.info(f'saved at {path}')
+                        logger.info(f'saved at {path}')
             else: 
                 torch.save(_net.state_dict(),path)
-                self.logger.info(f'saved at {path}')
+                logger.info(f'saved at {path}')
 
         self._data.save(self._working_dir)
         return self
@@ -131,7 +140,7 @@ class Training_Secretary(Secretary_base):
         Offload the interim tensor to cpu for reducing VRAM cost 
         '''
         if flag:
-            self.logger.warning('Offloading is enabled, may impact the training efficiency.')
+            logger.warning('Offloading is enabled, may impact the training efficiency.')
             offload_module(module_type,net,ratio)
 
 
