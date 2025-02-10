@@ -110,7 +110,7 @@ class Image_training(PipelineBase):
         '''
         If there is a single opt, pack it into a list.
 
-        If lr_scheduler and warmup_scheduler is not set, an empty scheduler will be set 
+        If lr_scheduler and warmup_scheduler is not designated, an empty scheduler as a placeholder will be set 
         '''
         if not isinstance(self._cfg.opt,list):
             self.opt=[self._cfg.opt]
@@ -164,13 +164,14 @@ class Image_training(PipelineBase):
             _loss = CFG.loss(_out,datum[1])
         return _loss
 
-    def Run(self,*args,**kwargs):
+    def Run(self,early_stop=100000,*args,**kwargs):
         CFG=self._cfg
         
         scaler=accelerate.utils.get_grad_scaler()
         batch_len=len(self._dl)
         training_status={'batch_len':batch_len,'pipline_object':self}
-        for _ep in range(CFG.EPOCH):    
+        for _ep in range(CFG.EPOCH):
+            if _ep>early_stop: break
             training_status['ep']=_ep
             PipelineBase.call_actions(self.on_epoch_begin,training_status)
             for _b_id,datum in enumerate(self._dl):

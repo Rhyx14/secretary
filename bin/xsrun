@@ -15,7 +15,7 @@ template='''
 {
     "mode":"plain",
     "cmds":[
-        "#id1","#id2", // if elements before commands exists, then an idenetial guid will generate for each commands below
+        "#id1","#id2", // if elements before commands exists, then generate GUID for each commands below
         [
             "ls -l",
             "ls -l"
