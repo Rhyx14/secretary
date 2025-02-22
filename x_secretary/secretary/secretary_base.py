@@ -129,10 +129,10 @@ class Secretary_base():
             net=net.module
 
         if isinstance(weight,(str,Path)):
-            self.logger.info(f"Loading weight from {weight}, including: {include}, excluding: {exclude}")
+            logger.info(f"Loading weight from {weight}, including: {include}, excluding: {exclude}")
             weight=torch.load(weight,map_location='cpu',weights_only=True)
         else:
-            self.logger.info(f"Loading weight, including: {include}, excluding: {exclude}")
+            logger.info(f"Loading weight, including: {include}, excluding: {exclude}")
 
         if include is not None:
             if exclude != None or strict !=False:

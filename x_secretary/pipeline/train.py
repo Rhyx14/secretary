@@ -171,7 +171,7 @@ class Image_training(PipelineBase):
         batch_len=len(self._dl)
         training_status={'batch_len':batch_len,'pipline_object':self}
         for _ep in range(CFG.EPOCH):
-            if _ep>early_stop: break
+            if _ep>=early_stop: break
             training_status['ep']=_ep
             PipelineBase.call_actions(self.on_epoch_begin,training_status)
             for _b_id,datum in enumerate(self._dl):
