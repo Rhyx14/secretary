@@ -17,7 +17,7 @@ from .utils.opencv_loader import OpenCV_Loader
 from .utils.count_parameters import count_parameters
 from .utils.autodl import info_wechat_autodl
 from .utils.faster_save_on_cpu import offload_module,restore_offload
-from .utils.split_bn_parameters import split_decay_parameters
+from .utils.split_decay_parameters import split_decay_parameters
 from .utils.get_name_dict import get_name_dict
 from .utils.larc import LARC
 __all__.extend([
