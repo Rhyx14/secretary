@@ -1,5 +1,5 @@
 from typing import Any
-from ..utils.data_recorder import Avg
+from ..data_recorder import Avg
 class Record_Loss:
     '''
     Record loss

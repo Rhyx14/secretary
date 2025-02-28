@@ -6,7 +6,7 @@ __all__.extend([
     'Training_Secretary',
     'Eval_Secretary',
 ])
-from .utils.data_recorder import Serial,Avg
+from .data_recorder import Serial,Avg,DataRecorder
 from .utils.ddp_sampler import DDP_BatchSampler
 from .utils.sys_info import get_sys_info,get_host_name
 from .utils.init_env import init_cuda
@@ -21,7 +21,7 @@ from .utils.split_decay_parameters import split_decay_parameters
 from .utils.get_name_dict import get_name_dict
 from .utils.larc import LARC
 __all__.extend([
-    'Serial','Avg',
+    'Serial','Avg','DataRecorder',
     'DDP_BatchSampler',
     'init_cuda',
     'set_seed',

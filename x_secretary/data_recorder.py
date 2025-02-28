@@ -19,7 +19,7 @@ class Serial():
         self.index=index
         pass
 
-class data_recorder:
+class DataRecorder:
 
     def __init__(self) -> None:
         self._serial_data=defaultdict(list)

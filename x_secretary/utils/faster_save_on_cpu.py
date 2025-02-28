@@ -126,6 +126,9 @@ class _Offload_Forward():
         return rslt
 
 def offload_module(module_type,net:torch.nn.Module,ratio=1.):
+    '''
+    Offload the interim tensor to cpu for reducing VRAM cost 
+    '''
     _module_count=0.
     for module in net.modules():
         if isinstance(module,module_type):

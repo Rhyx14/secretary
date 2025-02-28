@@ -7,13 +7,11 @@ import pathlib
 from loguru import logger
 from .deprecated import deprecated
 class Configuration():
-    def __init__(self,init_dict:dict=None,auto_record:bool=True,logger=None) -> None:
+    def __init__(self,init_dict:dict=None,auto_record:bool=True) -> None:
         '''
         The configuation object.
 
         auto_record: record the item changes that its key doesn't started with '_'
-
-        logger: whether using external logger. If logger is set to None, a new logger will be created
         '''
         self._auto_record=auto_record
         self._change_set=set()

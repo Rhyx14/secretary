@@ -1,7 +1,7 @@
+from typing import Callable,Iterable
 import os,uuid,sys,torch
 from ..secretary_base import Secretary_base
 from ..solo_method import solo_method,solo_chaining_method,solo_method_with_default_return
-import torch.distributed as dist
 from ...utils.sys_info import get_sys_info
 from ...utils.log_dir import Log_dir
 from loguru import logger
@@ -32,15 +32,28 @@ class Training_Secretary(Secretary_base):
             self.save_main_script()
 
         # 打印环境信息
-        self._log_env()
+        self._log_env() 
+    
+    def _saving_file(self,path:Path):
+        (self._working_dir/ path.name).write_text(Path.read_text(path),encoding='utf-8')
+
+    @solo_chaining_method
+    def saving_files(self,path: Path | Iterable[Path] ):
+        '''
+        Copy files (text) to working dir
+        '''
+        if isinstance(path,Path):
+            self._saving_file(path)
+        else:
+            for _p in path: self._saving_file(_p)
+        return self
 
     @solo_chaining_method
     def save_main_script(self):
         '''
         Saving the running script
         '''
-        s=Path.read_text(Path(sys.argv[0]))
-        (self._working_dir/ sys.argv[0] ).write_text(s,encoding='utf-8')
+        self._saving_file(Path(sys.argv[0]))
         return self
 
     @solo_method
@@ -54,40 +67,46 @@ class Training_Secretary(Secretary_base):
         with open(self._working_dir/'env.txt','w') as f:
             f.write(get_sys_info())
 
+    def _log_to_file(self,content,file_name,prefix):
+        with open(self._working_dir/file_name,'a+') as f:
+            if not isinstance(prefix,str): prefix=prefix()
+            if not isinstance(content,str): content=content()
+            if prefix !='': f.write(f'# ==================== {prefix} ===========================\n')
+            f.write(content)
+            f.write('\n')
+        return
+
     @solo_chaining_method
-    def log_to_cfg(self,s,prefix=''):
+    def log(self,content: str | Callable[..., str] ,file_name: str,prefix: str | Callable[..., str] =''):
+        '''
+        log text contents to designated file in the working directory
+        '''
+        self._log_to_file(content,file_name,prefix)
+        return self
+
+    @solo_chaining_method
+    def log_to_cfg(self,content: str | Callable[..., str],prefix : str | Callable[..., str] =''):
         '''
         log string to the configuration files,
-
-        s / prefix should be a str or callable object 
         '''
-        with open(self._working_dir/'configuration.txt','a') as f:
-            if not isinstance(prefix,str):
-                prefix=prefix()
-            if prefix !='':
-                f.write(f'# ==================== {prefix} ===========================\n')
-            if not isinstance(s,str):
-                s=s()
-            f.write(s)
-            f.write('\n')
+        self._log_to_file(content,'configuration.txt', prefix)
         return self
     
     @solo_chaining_method
-    def log_cfg_changes(self,cfg:Configuration,name='',reset=True):
+    def log_cfg_changes(self,cfg:Configuration,prefix: str | Callable[..., str] ='',reset=True):
         '''
         log string to the changes of configuration objects,
 
         note that this function is only suitable for the Stage Mode
         '''
-        with open(self._working_dir/'configuration.txt','a') as f:
-            f.write(name+'\n')
-            f.write(cfg.get_records_str())
-            if reset:
-                cfg.reset_records()
-            f.write('\n')
+        self._log_to_file(cfg.get_records_str(),'configuration.txt', prefix)
+        if reset: cfg.reset_records()
         return self
         
-    def set_name_prefix(self,name_prefix):
+    def set_working_dir_name(self,name_prefix: str):
+        '''
+        change the working dir's name
+        '''
         self.sync()
         self.Log_dir.change_name(Log_dir.time_suffix_name(name_prefix))
         self._working_dir=self.Log_dir.saved_dir
@@ -97,9 +116,11 @@ class Training_Secretary(Secretary_base):
         return self
     
     @solo_chaining_method
-    def save(self,net=None,best_mode=False,best_value=None,file_name='weight.pt'):
+    def save(self,net: torch.nn.Module=None,best_mode=False,best_value=None,file_name='weight.pt'):
         '''
         save network weight and recorded data (solo) -> self
+
+        if net is None, save the data only
 
         If best_mode == False, the literal value of the best_value doesn't make a difference.
         otherwise, the best_mode is only enabled with a valid best_value.
@@ -135,9 +156,11 @@ class Training_Secretary(Secretary_base):
         self._data.save(self._working_dir)
         return self
 
-    def offload_module(self,flag, module_type, net, ratio=0):
+    def offload_module(self,flag: bool, module_type, net: torch.nn.Module, ratio=1. ):
         '''
         Offload the interim tensor to cpu for reducing VRAM cost 
+
+        ratio: the precentage of offloaded tensors
         '''
         if flag:
             logger.warning('Offloading is enabled, may impact the training efficiency.')

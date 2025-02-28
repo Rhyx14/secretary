@@ -7,7 +7,7 @@ from pathlib import Path
 import torch.distributed as dist
 from ..utils.autodl import info_wechat_autodl
 from .solo_method import solo_method,solo_method_with_default_return,solo_chaining_method
-from ..utils.data_recorder import data_recorder
+from ..data_recorder import DataRecorder
 from ..deprecated import deprecated
 from functools import wraps
 
@@ -16,7 +16,7 @@ class Secretary_base():
     def __init__(self,working_dir:Path) -> None:
 
         self._time_stamps=None
-        self._data=data_recorder()
+        self._data=DataRecorder()
 
         self._stages_list=[]
         self._stage_act_template=['todo']

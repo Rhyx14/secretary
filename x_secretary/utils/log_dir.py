@@ -52,7 +52,7 @@ class Log_dir:
             pathlib.Path.mkdir(self.saved_dir,exist_ok=True)
         return self
     
-    def change_name(self,name):
+    def change_name(self,name: str):
         '''
         change the name of the directory (solo)
         '''
@@ -75,7 +75,7 @@ class Log_dir:
 
 
     @staticmethod
-    def time_suffix_name(name)->str:
+    def time_suffix_name(name: str)->str:
         '''
         Generate a name with timestamp suffix
          
