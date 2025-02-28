@@ -15,7 +15,8 @@ class Secretary_base():
 
     def __init__(self,working_dir:Path) -> None:
 
-        self._time_stamps=None
+        self._time_stamps={'default': datetime.datetime.now()}
+
         self._data=DataRecorder()
 
         self._stages_list=[]
@@ -175,28 +176,27 @@ class Secretary_base():
         info_wechat_autodl(token,title,name,content)
 
 
-    _divider={
+    _DIVIDER={
         'KB':1024,
         'MB':1024*1024,
         'GB':1024*1024*1024,
         'TB':1024*1024*1024*1024
     }
     def cuda_VRAM_usage(self,mode='MB'):
-        self.info_all(f'{self.LOCAL_RANK} - maximal CUDA memory usage:{torch.cuda.max_memory_allocated()/Secretary_base._divider[mode]:.3f}{mode}')
+        self.info_all(f'{self.LOCAL_RANK} - maximal CUDA memory usage:{torch.cuda.max_memory_allocated()/Secretary_base._DIVIDER[mode]:.3f}{mode}')
         return self
 
     @solo_chaining_method
-    def timing(self):
+    def timing(self,name='default'):
         '''
         计算时间间隔 (solo) -> self
         '''
-        if self._time_stamps is None:
-            self._time_stamps=datetime.datetime.now()
+        now=datetime.datetime.now()
+        if not name in self._time_stamps:
+            self._time_stamps[name]= now
         else:
-            now=datetime.datetime.now()
-            span=now-self._time_stamps
-            logger.info(f'span === {str(span)}')
-            self._time_stamps=now
+            logger.info(f'span_{name}=={str(now-self._time_stamps[name])}')
+            self._time_stamps[name]=now
         return self
 
     def register_stage(self,priority=-1,pre_acts=[],post_acts=[],stage_env=None):
