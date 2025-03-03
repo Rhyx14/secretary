@@ -10,7 +10,11 @@ from ...utils.faster_save_on_cpu import offload_module,restore_offload
 from ...configuration import Configuration
 LOGGER_FMT='<blue>{time:YYYY-MM-DD HH:mm:ss Z}</blue> [<level>{level}</level>] <green>{name}:{line}</green><yellow>#</yellow> {message}'
 class Training_Secretary(Secretary_base):
-    def __init__(self,saved_dir='.',logging_level='INFO', saving_main_script=True) -> None:
+    def __init__(self,
+                 saved_dir='.',
+                 logging_level='INFO', 
+                 saving_main_script=True,
+                 log_environment=True) -> None:
         super().__init__(Path(saved_dir))
 
         # create folder
@@ -32,7 +36,8 @@ class Training_Secretary(Secretary_base):
             self.save_main_script()
 
         # 打印环境信息
-        self._log_env() 
+        if log_environment:
+            self._log_env() 
     
     def _saving_file(self,path:Path):
         (self._working_dir/ path.name).write_text(Path.read_text(path),encoding='utf-8')

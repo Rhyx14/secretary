@@ -183,7 +183,17 @@ class Secretary_base():
         'TB':1024*1024*1024*1024
     }
     def cuda_VRAM_usage(self,mode='MB'):
+        '''
+        stats maxial cuda memory usage since the program began
+        '''
         self.info_all(f'{self.LOCAL_RANK} - maximal CUDA memory usage:{torch.cuda.max_memory_allocated()/Secretary_base._DIVIDER[mode]:.3f}{mode}')
+        return self
+    
+    def cuda_current_VRAM_usage(self,mode='MB'):
+        '''
+        stats current cuda memory usage.
+        '''
+        self.info_all(f'{self.LOCAL_RANK} - CUDA memory usage:{torch.cuda.memory_allocated()/Secretary_base._DIVIDER[mode]:.3f}{mode}')
         return self
 
     @solo_chaining_method
