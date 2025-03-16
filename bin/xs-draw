@@ -1,0 +1,48 @@
+#!python
+import json
+import matplotlib.pyplot as plt
+from x_secretary import Configuration
+from pathlib import Path
+
+CFG=Configuration(auto_record=False).add_args([
+    ('-f','--folder',str,'.','records folder' ),
+    ('-g','--group',str,'None','group the data. e.g.: "data1,data2", which will only draw data1 and data2 in the same figure'),
+    ('-o','--output',str,'record_data.png','the saved figure file name')
+])
+WORKING_DIR=Path(CFG.folder)
+
+# 读取 JSON 文件
+def load_json(file_path):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+    return data
+
+# 绘制折线图并保存到本地
+def plot_serial_data(serial_data):
+    for key, values in serial_data.items():
+        plt.plot(values, label=key)  # 绘制折线图，label 为键名
+    plt.xlabel('Index')  # 横轴标签
+    plt.ylabel('Value')  # 纵轴标签
+    plt.title('Serial Data Plot')  # 图表标题
+    plt.legend()  # 显示图例
+
+    plt.savefig(WORKING_DIR / CFG.output)  # 保存图表到本地
+    print(f"Plot saved to {WORKING_DIR / CFG.output}")
+
+# 主函数
+def main():
+    file_path = WORKING_DIR/'record_data.json'  # JSON 文件路径
+
+    data = load_json(file_path)  # 加载 JSON 数据
+    serial_data = data.get('serial data', {})  # 获取 SerialData 字段
+    if serial_data:
+        if CFG.group=='None': # draw all the data
+            plot_serial_data(serial_data)  # 绘制并保存折线图
+        else:
+            keys=set(CFG.group.split(','))
+            plot_serial_data({_k:_v for _k,_v in serial_data.items() if _k in keys})
+    else:
+        print("serial data field not found or is empty.")
+
+if __name__ == '__main__':
+    main()
