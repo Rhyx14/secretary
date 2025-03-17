@@ -41,7 +41,7 @@ class Log_dir:
             _saved_dir=self.root_path/self.name
 
             if(self.local_rank==0):
-                pathlib.Path.mkdir(_saved_dir,exist_ok=True)
+                pathlib.Path.mkdir(_saved_dir,parents=True,exist_ok=True)
 
             ls=[str(_saved_dir)]
             dist.broadcast_object_list(ls,0)
