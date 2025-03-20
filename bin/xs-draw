@@ -1,15 +1,15 @@
-#!python
 import json
 import matplotlib.pyplot as plt
+import re  # 导入正则表达式模块
 from x_secretary import Configuration
 from pathlib import Path
 
-CFG=Configuration(auto_record=False).add_args([
-    ('-f','--folder',str,'.','records folder' ),
-    ('-g','--group',str,'None','group the data. e.g.: "data1,data2", which will only draw data1 and data2 in the same figure'),
-    ('-o','--output',str,'record_data.png','the saved figure file name')
+CFG = Configuration(auto_record=False).add_args([
+    ('-f', '--folder', str, '.', 'records folder'),
+    ('-r', '--regex', str, '.*', 'group the data using regex. e.g.: "data[0-9]+" to match all data starting with "data" followed by numbers'),
+    ('-o', '--output', str, 'record_data.png', 'the saved figure file name')
 ])
-WORKING_DIR=Path(CFG.folder)
+WORKING_DIR = Path(CFG.folder)
 
 # 读取 JSON 文件
 def load_json(file_path):
@@ -20,6 +20,7 @@ def load_json(file_path):
 # 绘制折线图并保存到本地
 def plot_serial_data(serial_data):
     for key, values in serial_data.items():
+        print(f'matching :{key}')
         plt.plot(values, label=key)  # 绘制折线图，label 为键名
     plt.xlabel('Index')  # 横轴标签
     plt.ylabel('Value')  # 纵轴标签
@@ -31,18 +32,23 @@ def plot_serial_data(serial_data):
 
 # 主函数
 def main():
-    file_path = WORKING_DIR/'record_data.json'  # JSON 文件路径
+    file_path = WORKING_DIR / 'record_data.json'  # JSON 文件路径
 
     data = load_json(file_path)  # 加载 JSON 数据
     serial_data = data.get('serial data', {})  # 获取 SerialData 字段
     if serial_data:
-        if CFG.group=='None': # draw all the data
-            plot_serial_data(serial_data)  # 绘制并保存折线图
+        if CFG.regex == '.*':  # 默认匹配所有数据
+            plot_serial_data(serial_data)
         else:
-            keys=set(CFG.group.split(','))
-            plot_serial_data({_k:_v for _k,_v in serial_data.items() if _k in keys})
+            # 使用正则表达式匹配键
+            pattern = re.compile(CFG.regex)
+            filtered_data = {k: v for k, v in serial_data.items() if pattern.match(k)}
+            if filtered_data:
+                plot_serial_data(filtered_data)
+            else:
+                print(f"No data matches the regex pattern: {CFG.regex}")
     else:
-        print("serial data field not found or is empty.")
+        print("<serial data> field not found or is empty.")
 
 if __name__ == '__main__':
     main()
