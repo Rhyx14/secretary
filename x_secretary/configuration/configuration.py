@@ -5,7 +5,8 @@ import torch.distributed as dist
 from typing import Any, Union
 import pathlib
 from loguru import logger
-from .deprecated import deprecated
+from ..deprecated import deprecated
+from .string_formate import string_formate
 class Configuration():
     def __init__(self,init_dict:dict=None,auto_record:bool=True) -> None:
         '''
@@ -54,15 +55,7 @@ class Configuration():
         return self
 
     def __str__(self) -> str:
-        ls=''
-        for k,v in self.__dict__.items():
-            if str.startswith(k,'_'):
-                continue
-            elif isinstance(v,(torch.Tensor)):
-                ls += f"torch.Tensor<shape={v.shape}, dtype={v.dtype}>"
-            else:
-                ls += "%s\t%s\n" % (k,v)
-        return ls
+        return self.get_records_str()
 
     def __setattr__(self, __name: str, __value: Any) -> None:
         if not str.startswith(__name,'_') and self._auto_record:
@@ -81,14 +74,7 @@ class Configuration():
         '''
         stringify the changed properties
         '''
-        ls=''
-        for _name in self._change_set:
-            v=self.__dict__[_name]
-            if isinstance(v,(str,int,float)):
-                ls += "%s\t%s\n" % (_name,v)
-            else:
-                ls += "%s\t%s\n" % (_name,v)
-        return ls
+        return string_formate(self)
     
     def get_records_str_and_reset(self):
         '''

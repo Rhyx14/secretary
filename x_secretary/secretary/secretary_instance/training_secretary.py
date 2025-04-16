@@ -7,7 +7,7 @@ from ...utils.log_dir import Log_dir
 from loguru import logger
 from pathlib import Path
 from ...utils.faster_save_on_cpu import offload_module,restore_offload
-from ...configuration import Configuration
+from ...configuration.configuration import Configuration
 LOGGER_FMT='<blue>{time:YYYY-MM-DD HH:mm:ss Z}</blue> [<level>{level}</level>] <green>{name}:{line}</green><yellow>#</yellow> {message}'
 class Training_Secretary(Secretary_base):
     def __init__(self,
@@ -76,7 +76,7 @@ class Training_Secretary(Secretary_base):
         with open(self._working_dir/file_name,'a+') as f:
             if not isinstance(prefix,str): prefix=prefix()
             if not isinstance(content,str): content=content()
-            if prefix !='': f.write(f'# ==================== {prefix} ===========================\n')
+            if prefix !='': f.write(f'# {prefix}\n')
             f.write(content)
             f.write('\n')
         return
@@ -94,7 +94,7 @@ class Training_Secretary(Secretary_base):
         '''
         log string to the configuration files,
         '''
-        self._log_to_file(content,'configuration.txt', prefix)
+        self._log_to_file(content,'configuration.md', prefix)
         return self
     
     @solo_chaining_method
@@ -104,7 +104,7 @@ class Training_Secretary(Secretary_base):
 
         note that this function is only suitable for the Stage Mode
         '''
-        self._log_to_file(cfg.get_records_str(),'configuration.txt', prefix)
+        self._log_to_file(cfg.get_records_str(),'configuration.md', prefix)
         if reset: cfg.reset_records()
         return self
         

@@ -5,14 +5,9 @@ def get_str_time(tpl:str="%Y-%m-%d_%H:%M:%S_%z")-> str:
 from contextlib import contextmanager
 import time
 @contextmanager
-def measure_time(logger=None):
+def measure_time(logger=None,banner="Running time"):
     '''
     measure the time spans
-
-    repeat: repeat time
-
-    mode: 'avg' average time
-          'sum' total time
     '''
     start_time=time.time()
     times=[]
@@ -20,12 +15,12 @@ def measure_time(logger=None):
     times.append(time.time()-start_time)
 
     if logger is not None:
-        logger.info(f'Running time {sum(times)/len(times)}s')
+        logger.info(f'{banner} {sum(times)/len(times)}s')
     else:
-        print(f'Running time {sum(times)/len(times)}s')
+        print(f'{banner} {sum(times)/len(times)}s')
 
         
-def measure_func_time(func:callable,repeat=1,mode='avg',logger=None):
+def measure_func_time(func:callable,repeat=1,mode='avg',logger=None,banner="running time"):
     '''
     measure the time spans
 
@@ -42,13 +37,13 @@ def measure_func_time(func:callable,repeat=1,mode='avg',logger=None):
     match mode:
         case 'avg':
             if logger is not None:
-                logger.info(f'Average running time {sum(times)/len(times)}s')
+                logger.info(f'Average {banner} {sum(times)/len(times)}s')
             else:
-                print(f'Average running time {sum(times)/len(times)}s')
+                print(f'Average {banner} {sum(times)/len(times)}s')
         case 'sum':
             if logger is not None:
-                logger.info(f'Total running time {sum(times)}s')
+                logger.info(f'Total {banner} {sum(times)}s')
             else:
-                print(f'Total running time {sum(times)}s')
+                print(f'Total {banner} {sum(times)}s')
         case _:
             raise ValueError(f'Erroneous mode: "{mode}"')

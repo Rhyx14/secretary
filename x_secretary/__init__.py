@@ -38,7 +38,7 @@ __all__.extend([
     'LARC'
 ])
 
-from .configuration import Configuration
+from .configuration.configuration import Configuration
 __all__.extend([
     'Configuration'
 ])

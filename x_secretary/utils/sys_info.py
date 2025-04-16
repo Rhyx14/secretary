@@ -6,15 +6,18 @@ def get_cpu_name()->str:
         if sys.platform == 'linux':
             _strs=subprocess.check_output(['cat','/proc/cpuinfo'])
             _strs=bytes.decode(_strs)
-            rslt=re.search(r"model name\t: ([\w\s\(\)]*)\n",_strs,re.S).group(1)
-            # _strs=os.system('cat/cpuinfo | grep "model name"')
-            pass
+            rslt=re.search(r"model name\t: (.*?)\n",_strs,re.S)
+            rslt=rslt.group(1)
+
+        elif sys.platform == 'win32':
+            _strs=subprocess.check_output(['wmic','cpu','list','brief'])
+            _strs=bytes.decode(_strs)
+            rslt=rslt
     except:
         pass
     finally:
         return rslt
-
-
+    
 def get_sys_info() -> str:
     '''
     获取系统环境信息（目前只支持CUDA环境）
@@ -43,3 +46,7 @@ def get_host_name() ->str:
     get host name, (computer name in Windows)
     '''
     return platform.node()
+
+if __name__=='__main__':
+    print(get_cpu_name())
+    print(get_sys_info())
