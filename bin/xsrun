@@ -1,6 +1,6 @@
 #!python
 import subprocess
-from x_secretary.configuration import Configuration
+from x_secretary import Configuration
 from pathlib import Path
 import json
 from itertools import takewhile,dropwhile
