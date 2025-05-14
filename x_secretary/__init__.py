@@ -20,6 +20,7 @@ from .utils.faster_save_on_cpu import offload_module,restore_offload
 from .utils.split_decay_parameters import split_decay_parameters
 from .utils.get_name_dict import get_name_dict
 from .utils.larc import LARC
+from .utils.base64enc import encode_base64_str,decode_base64_str
 __all__.extend([
     'Serial','Avg','DataRecorder',
     'DDP_BatchSampler',
@@ -35,7 +36,8 @@ __all__.extend([
     'offload_module','restore_offload',
     'split_decay_parameters',
     'get_name_dict',
-    'LARC'
+    'LARC',
+    'encode_base64_str','decode_base64_str',
 ])
 
 from .configuration.configuration import Configuration
