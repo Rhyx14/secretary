@@ -60,7 +60,7 @@ class Image_classification_val(PipelineBase):
         
         super().__init__(self._accelerator.device,data_hooks)
 
-    def Run(self,loss=None,*args,**kwargs):
+    def __call__(self,loss=None,*args,**kwargs):
         with torch.no_grad():
             acc=torch.Tensor([0]).to(self._accelerator.device)
             _loss=torch.Tensor([0]).to(self._accelerator.device)
@@ -97,7 +97,7 @@ class Image_plain_val(Image_classification_val):
 
     mix_precision: Choose from 'no','fp16','bf16' or 'fp8' (achieved via accelerate)
     '''
-    def Run(self,loss=None,*args,**kwargs):
+    def __call__(self,loss=None,*args,**kwargs):
         with torch.no_grad():
             _loss=torch.Tensor([0]).to(self._accelerator.device)
 
@@ -147,7 +147,7 @@ class Image_segmentation_val(PipelineBase):
         
         super().__init__(default_device,lambda x: x)
 
-    def Run(self,*args,**kwargs):
+    def __call__(self,*args,**kwargs):
 
         metric=Metric(self.n_classes)
         dl=DataLoader(self.dataset,

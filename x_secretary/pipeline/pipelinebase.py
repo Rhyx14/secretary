@@ -25,10 +25,10 @@ class PipelineBase():
         pass
     
     def Run(self,*args,**kwds):
-        raise NotImplementedError
+        raise self.__call__(*args,**kwds)
 
     def __call__(self, *args, **kwds):
-        return self.Run(*args,**kwds)
+        raise NotImplementedError
 
     @staticmethod
     def call_actions(actions,*args):

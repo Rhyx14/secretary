@@ -21,6 +21,7 @@ from .utils.split_decay_parameters import split_decay_parameters
 from .utils.get_name_dict import get_name_dict
 from .utils.larc import LARC
 from .utils.base64enc import encode_base64_str,decode_base64_str
+from .utils.get_name import get_name
 __all__.extend([
     'Serial','Avg','DataRecorder',
     'DDP_BatchSampler',
@@ -37,6 +38,7 @@ __all__.extend([
     'split_decay_parameters',
     'get_name_dict',
     'LARC',
+    'get_name',
     'encode_base64_str','decode_base64_str',
 ])
 

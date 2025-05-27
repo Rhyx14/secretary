@@ -164,7 +164,7 @@ class Image_training(PipelineBase):
             _loss = CFG.loss(_out,datum[1])
         return _loss
 
-    def Run(self,early_stop=100000,*args,**kwargs):
+    def __call__(self,early_stop=100000,*args,**kwargs):
         CFG=self._cfg
         
         scaler=accelerate.utils.get_grad_scaler()
