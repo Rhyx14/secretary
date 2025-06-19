@@ -3,8 +3,9 @@ def split_decay_parameters(module:torch.nn.Module) -> tuple:
     '''
     splite parameters
 
-    @return : decay, // including CONV, Linear,
-            : no_decay, // including BN, bias of each layer
+    @return : decay, // including CONV, Linear, or module has split_decay_parameters()
+            
+            : no_decay, // including BN, bias of each layer, or module has split_decay_parameters()
     '''
     params_decay = []
     params_no_decay = []
