@@ -39,18 +39,31 @@ class Training_Secretary(Secretary_base):
         if log_environment:
             self._log_env() 
     
-    def _saving_file(self,path:Path):
-        (self._working_dir/ path.name).write_text(Path.read_text(path),encoding='utf-8')
+    def _saving_file(self,source:Path,name:str=None):
+        if name is None:
+            (self._working_dir/ source.name).write_text(Path.read_text(source),encoding='utf-8')
+        else:
+            (self._working_dir / name).write_text(Path.read_text(source),encoding='utf-8')
 
     @solo_chaining_method
-    def saving_files(self,path: Path | Iterable[Path] ):
+    def saving_files(self,path: Path | Iterable[Path] | tuple | Iterable[tuple[str | str]]):
         '''
         Copy files (text) to working dir
+
+        path: Pathlib.Path, if using the original name;
+
+              (Pathlib.Path,Str), rename to Str
         '''
         if isinstance(path,Path):
             self._saving_file(path)
+        elif isinstance(path,tuple):
+            self._saving_file(*path)
         else:
-            for _p in path: self._saving_file(_p)
+            for _p in path:
+                if isinstance(_p, Path):
+                    self._saving_file(_p)
+                else:
+                    self._saving_file(*_p)
         return self
 
     @solo_chaining_method

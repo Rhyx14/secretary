@@ -25,7 +25,8 @@ class Image_classification_val(PipelineBase):
             mix_precision='fp16',
             cpu=False,
             data_hooks=None,
-            get_pred=None
+            get_pred=None,
+            shuffle=False,
         ) -> None:
 
         self.net=net
@@ -54,7 +55,7 @@ class Image_classification_val(PipelineBase):
                 batch_size=self.batch_size,
                 num_workers=self.dl_workers,
                 prefetch_factor=self.dl_prefetch_factor,
-                shuffle=False,
+                shuffle=shuffle,
                 pin_memory=True)
             )
         
