@@ -31,6 +31,9 @@ class Secretary_base():
             self._distributed=False
         
         self._working_dir=working_dir
+    
+    @property
+    def working_dir(self): return self._working_dir
 
     @solo_chaining_method
     def print_solo(self,str,**kwargs):

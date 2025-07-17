@@ -3,7 +3,7 @@ from contextlib import contextmanager
 class EmptyLRScheduler():
     def __init__(self) -> None:
         pass
-    def step():
+    def step(self):
         pass
     
 class EmptyWarmup():
