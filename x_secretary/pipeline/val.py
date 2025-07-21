@@ -1,4 +1,4 @@
-import torch,accelerate
+import torch,accelerate,sys
 from .pipelinebase import PipelineBase
 from .misc import DDP_progressbar
 from torch.utils.data.dataloader import DataLoader
@@ -37,6 +37,11 @@ class Image_classification_val(PipelineBase):
         self.on_turn_begin=on_turn_begin
         self.on_turn_end=on_turn_end
         self._mix_precision=mix_precision
+
+        if sys.platform != 'linux':
+            self.dl_workers=0
+            self.dl_prefetch_factor=None
+            print('Platform is not Linux, disable dataloader_workers and prefetching')
 
         if get_pred is not None: self._get_pred=get_pred
         else: self._get_pred=lambda x: x.argmax(dim=1, keepdim=True)  # get the index of the max log-probability

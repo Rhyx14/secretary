@@ -17,6 +17,10 @@ class Default_DataHook:
     @staticmethod
     def unpack_cuda(datum):
         return datum[0].cuda(),datum[1].cuda()
+    
+    @staticmethod
+    def unpack_classification(datum,device):
+        return datum[0].to(device),datum[1].to(device)
 
 class PipelineBase():
     def __init__(self,default_device,data_hooks) -> None:

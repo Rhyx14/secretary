@@ -1,5 +1,5 @@
 from enum import Enum
-import torch
+import torch,sys
 import torch.distributed
 from torch.utils.data.dataloader import DataLoader
 from .pipelinebase import PipelineBase
@@ -87,6 +87,11 @@ class Image_training(PipelineBase):
         PipelineBase._Check_Attribute(self._cfg,'EPOCH',(int,))
 
         self._init_opt_lr_scheduler()
+
+        if sys.platform != 'linux':
+            dl_workers=0
+            prefetch_factor=None
+            print('Platform is not Linux, disable dataloader_workers and prefetching')
 
         self._accelerator=accelerate.Accelerator(
             mixed_precision=mixed_precision,
