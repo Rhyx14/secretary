@@ -12,21 +12,22 @@ CFG=Configuration(auto_record=False).add_args([
 ])
 
 template='''
-{
-    "mode":"plain",
-    "cmds":[
-        "#id1","#id2", // if elements before commands exists, then generate GUID for each commands below
-        [
-            "ls -l",
-            "ls -l"
-        ],
-        [
-            "ls -l",
-            "ls -l"
-        ]
+mode: "plain"
+autodl_wechat_api: ['aff6539b84fb','imagenet training complete'] # optional
+GUIDs: ["#id1","#id2"] # generate GUID for each commands below
+cmds: [
+    [
+        "ls -l",
+        "echo #id1"
+    ],
+    [
+        "ls -l",
+        "ls -l"
     ]
-}
+]
 '''
+
+from x_secretary.utils.autodl import info_wechat_autodl
 
 def get_process(raw_cmd:str,replace_dict:dict):
     _cmd=raw_cmd.split()
@@ -49,19 +50,24 @@ def run():
             raise NotImplementedError(f'Not support files type {CFG.input.suffix}.')
         
     CFG.update(batch_info)
-    match CFG.mode:
-        case 'plain':
-            _replace_dict={}
-            # 按照配置中的命令的分组执行(严格字面值)，都执行完成后再执行下一组
-            for _str in takewhile(lambda __obj: isinstance(__obj,str),CFG.cmds):
-                _replace_dict[_str]=str(uuid.uuid1())
+    
+    guid_replace_dict={}
+    if 'GUIDs' in batch_info:
+        for _str in CFG.GUIDs:
+            guid_replace_dict[_str]=str(uuid.uuid1())
 
-            for _cmd_group in dropwhile(lambda __obj: isinstance(__obj,str),CFG.cmds):
-                _process= [get_process(_raw_cmd,_replace_dict) for _raw_cmd in _cmd_group]
+    match CFG.mode:
+        # 按照配置中的命令的分组执行(严格字面值)，都执行完成后再执行下一组
+        case 'plain':
+            for _cmd_group in CFG.cmds:
+                _process= [get_process(_raw_cmd,guid_replace_dict) for _raw_cmd in _cmd_group]
                 for p in _process : p.wait()
         case _:
             raise ValueError(f'Not support mode "{CFG.mode}" yet.')
-    
+
+    if 'autodl_wechat_api' in batch_info:
+        info_wechat_autodl(token=CFG.autodl_wechat_api[0],title=CFG.autodl_wechat_api[1])
+
 if CFG.template:
     print(template)
 else:

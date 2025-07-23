@@ -10,7 +10,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 setup(
     name='x_secretary',  # Package name
     packages=find_packages(exclude=['__pycache__']),  # Include all packages except __pycache__
-    version='0.3.250721',  # Version
+    version='0.3.250722',  # Version
     classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',

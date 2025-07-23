@@ -4,6 +4,6 @@ dist/
 secretary.egg-info/
 .ipynb_checkpoints/
 *.egg-info/
-test*.py
+test*
 test/
 Todo.md
