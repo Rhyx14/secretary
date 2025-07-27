@@ -16,5 +16,4 @@ def _get_name(obj:partial | Any) -> str:
     '''
     if isinstance(obj,partial):
         obj=obj.func
-    else:
-        return obj.__name__
+    return obj.__name__
