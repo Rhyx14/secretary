@@ -7,3 +7,4 @@ secretary.egg-info/
 test*
 test/
 Todo.md
+.vscode/
