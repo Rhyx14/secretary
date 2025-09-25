@@ -139,6 +139,7 @@ class Image_segmentation_val(PipelineBase):
             default_device:str=None,
             dl_workers=4,
             dl_prefetch_factor=2,
+            data_hooks=None,
             on_turn_begin=None,
             on_turn_end=None,):
         self.net=net
@@ -151,7 +152,7 @@ class Image_segmentation_val(PipelineBase):
         self.on_turn_begin=on_turn_begin
         self.on_turn_end=on_turn_end
         
-        super().__init__(default_device,lambda x: x)
+        super().__init__(default_device,data_hooks)
 
     def __call__(self,*args,**kwargs):
 

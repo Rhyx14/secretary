@@ -35,6 +35,15 @@ def rot90_segmentation(img,label,p):
     return img,label
 
 def opencv_seg_label_to_torchTensor(label: numpy.ndarray) -> torch.Tensor:
+    '''
+    From opencv images [h,w,c] (BGR) to pytorch tensor [c,h,w] (RGB)
+    
+    [0-255] -> [0.,1.]
+
+    The label image should have the same value among all channels. Here the method will only return the first channel,
+
+    i.e., [c h w] -> [0 h w]
+    '''
     # convert to tensor
     label = torch.from_numpy(label.copy()).long()
     # [h,w,c] -> [c,h,w] -> [h,w]

@@ -15,10 +15,6 @@ class Default_DataHook:
         return inputs,gt
     
     @staticmethod
-    def unpack_cuda(datum):
-        return datum[0].cuda(),datum[1].cuda()
-    
-    @staticmethod
     def unpack_classification(datum,device):
         return datum[0].to(device),datum[1].to(device)
 

@@ -95,6 +95,7 @@ class Image_training(PipelineBase):
 
         self._accelerator=accelerate.Accelerator(
             mixed_precision=mixed_precision,
+            cpu=default_device == 'cpu',
             dataloader_config=accelerate.utils.DataLoaderConfiguration(
                 split_batches=True,data_seed=0,use_seedable_sampler=False
             ))
