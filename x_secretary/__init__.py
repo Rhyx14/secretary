@@ -23,6 +23,7 @@ from .utils.larc import LARC
 from .utils.base64enc import encode_base64_str,decode_base64_str
 from .utils.get_name import get_name
 from .utils.conv_quantization import symmetric_quantize_weight
+from .utils.focal_loss import FocalLoss
 __all__.extend([
     'Serial','Avg','DataRecorder',
     'DDP_BatchSampler',
@@ -41,7 +42,8 @@ __all__.extend([
     'LARC',
     'get_name',
     'encode_base64_str','decode_base64_str',
-    'symmetric_quantize_weight'
+    'symmetric_quantize_weight',
+    'FocalLoss'
 ])
 
 from .configuration.configuration import Configuration
