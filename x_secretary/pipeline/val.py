@@ -24,7 +24,7 @@ class Image_classification_val(PipelineBase):
             on_turn_end=None,
             mix_precision='fp16',
             cpu=False,
-            data_hooks=None,
+            data_hooks=lambda x: x,
             get_pred=None,
             shuffle=False,
         ) -> None:
@@ -71,7 +71,7 @@ class Image_classification_val(PipelineBase):
             acc=torch.Tensor([0]).to(self._accelerator.device)
             _loss=torch.Tensor([0]).to(self._accelerator.device)
 
-            for _bid,datum in enumerate(DDP_progressbar(self._dl)):
+            for _bid, datum in enumerate(DDP_progressbar(self._dl)):
                 x,label=PipelineBase.call_hooks(self.data_hooks,datum)
                 PipelineBase.call_actions(self.on_turn_begin)
 
