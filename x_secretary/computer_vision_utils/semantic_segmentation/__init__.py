@@ -1,4 +1,4 @@
 from .evaluator import EvaluatorBase
 from .metric import Metric
 from .seg_dataset import Seg_Dataset
-from .transforms import flip_segmentation,extract_segmentation,rot90_segmentation,opencv_seg_label_to_torchTensor,adapt_to_shape,select_central_area,select_random_area
+from .transforms import flip_segmentation,extract_segmentation,rot90_segmentation,opencv_seg_label_to_torchTensor,select_central_area,select_random_area,resize_by_short_side

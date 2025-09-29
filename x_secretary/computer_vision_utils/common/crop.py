@@ -3,6 +3,10 @@ import numpy as np
 from torchvision import transforms
 
 def crop(img: torch.Tensor | np.ndarray,crop_factor=32,down_size=1):
+    '''
+    确保图像长宽被crop_factor整除，然后间隔down_size采样
+
+    '''
     if isinstance(img,torch.Tensor):
         # downsize
         img=img[...,::down_size,::down_size]
