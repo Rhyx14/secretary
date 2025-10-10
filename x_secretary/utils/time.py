@@ -1,6 +1,14 @@
 import time
-def get_str_time(tpl:str="%Y-%m-%d_%H:%M:%S_%z")-> str:
-    return time.strftime(tpl,time.gmtime())
+def get_str_time(tpl:str="%Y-%m-%d_%H:%M:%S_%z",gmt=False)-> str:
+    '''
+    tpl: time string format
+
+    gmt: get GMT time, otherwise the localtime
+    '''
+    if gmt:
+        return time.strftime(tpl,time.gmtime())
+    else:
+        return time.strftime(tpl,time.localtime())
 
 from contextlib import contextmanager
 import time
