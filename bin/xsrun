@@ -62,6 +62,12 @@ def run():
             for _cmd_group in CFG.cmds:
                 _process= [get_process(_raw_cmd,guid_replace_dict) for _raw_cmd in _cmd_group]
                 for p in _process : p.wait()
+        # 按照配置中的命令的顺序执行，相当于只有每组只有一个命令
+        case 'sequential':
+            for _cmd in CFG.cmds:
+                assert isinstance(_cmd,str),f'In sequential mode, each command should be a string rather than a list. Got {_cmd}'
+                _process=get_process(_cmd,guid_replace_dict)
+                _process.wait()
         case _:
             raise ValueError(f'Not support mode "{CFG.mode}" yet.')
 
