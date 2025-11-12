@@ -10,12 +10,14 @@ from .solo_method import solo_method,solo_method_with_default_return,solo_chaini
 from ..data_recorder import DataRecorder
 from ..deprecated import deprecated
 from functools import wraps
+from contextlib import contextmanager
 
 class Secretary_base():
 
     def __init__(self,working_dir:Path) -> None:
 
         self._time_stamps={'default': datetime.datetime.now()}
+        self._flame_stamps=[]
 
         self._data=DataRecorder()
 
@@ -208,8 +210,46 @@ class Secretary_base():
         if not name in self._time_stamps:
             self._time_stamps[name]= now
         else:
-            logger.info(f'span_{name}=={str(now-self._time_stamps[name])}')
+            span=now-self._time_stamps[name]
+            logger.info(f'span_{name}=={str(span)} ({int(span.total_seconds()*1000)}ms)')
             self._time_stamps[name]=now
+        return self
+    
+    @contextmanager
+    @solo_chaining_method
+    def flame_time(self,name='default'):
+        '''
+        计算时间间隔 -> self
+        '''
+        self._flame_stamps.append((name,datetime.datetime.now().timestamp(),0))
+        yield
+        self._flame_stamps.append((name,datetime.datetime.now().timestamp(),1))
+        return self
+    
+    @solo_chaining_method
+    def flame_time_start(self,name='default'):
+        '''
+        记录火焰图开始时间 (solo) -> self
+        '''
+        self._flame_stamps.append((name,datetime.datetime.now().timestamp(),0))
+        return self
+    
+    @solo_chaining_method
+    def flame_time_end(self,name='default'):
+        '''
+        记录火焰图结束时间 (solo) -> self
+        '''
+        self._flame_stamps.append((name,datetime.datetime.now().timestamp(),1))
+        return self
+    
+    @solo_chaining_method
+    def save_flame_stamps(self,filename:str | Path='flame_time.txt'):
+        '''
+        save flame time to file (tutti)
+        '''
+        with open(self._working_dir/filename,'w') as f:
+            for _name,_time,_flag in self._flame_stamps:
+                f.write(f'{_name},{_time},{_flag}\n')
         return self
 
     def register_stage(self,priority=-1,pre_acts=[],post_acts=[],stage_env=None):

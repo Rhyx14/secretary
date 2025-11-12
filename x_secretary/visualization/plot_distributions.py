@@ -81,10 +81,10 @@ def plot_distributions(tensor_list:list, output_filename,
     plt.tight_layout()
     
     # 保存为PNG图片
-    plt.savefig(f"{output_filename}.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"{output_filename}", dpi=300, bbox_inches='tight')
     plt.close()
     
-    print(f"对比分布图已保存为 {output_filename}.png")
+    print(f"对比分布图已保存为 {output_filename}")
 
 def plot_tensor_distribution(tensor, output_filename,  bins='auto'):
     """
@@ -116,5 +116,5 @@ def plot_tensor_distribution(tensor, output_filename,  bins='auto'):
     plt.tight_layout()
     
     # 保存为PNG图片
-    plt.savefig(f"{output_filename}.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"{output_filename}", dpi=300, bbox_inches='tight')
     plt.close()
