@@ -1,7 +1,7 @@
 import numpy,einops,cv2
 # RGB
 MEAN=[0.485,0.456,0.406]
-def adapt_to_shape_unified(img: numpy.ndarray, target_shape: tuple):
+def adapt_image_to_shape(img: numpy.ndarray, target_shape: tuple):
     '''
     adapt image to a designated size, keeping the ratio, fill the blank with ImageNet MEAN pixel
 

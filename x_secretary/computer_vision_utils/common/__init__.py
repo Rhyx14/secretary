@@ -1,4 +1,6 @@
 from .crop import crop
 from .opencv_to_torchTensor import opencv_to_torchTensor
 from .alternating_resize import AlternatingResize
-from .adapt_to_shape import adapt_to_shape
+from .adapt_to_shape import adapt_image_to_shape
+from .resize_image_by_short_side import resize_image_by_short_side
+from .select_image_central_area import select_image_central_area
