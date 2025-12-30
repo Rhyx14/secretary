@@ -10,7 +10,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 setup(
     name='x_secretary',  # Package name
     packages=find_packages(exclude=['__pycache__']),  # Include all packages except __pycache__
-    version='0.3.1.251112',  # Version
+    version='0.3.2.251230',  # Version
     classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
@@ -27,6 +27,8 @@ setup(
         'torchvision>=0.15',
         'pytorch_warmup',
         'loguru',
+        'requests',
+        'einops'
     ],
     scripts=['bin/xsrun', 'bin/xs-draw'],  # Executable scripts
     author='rhyx14',  # Author
