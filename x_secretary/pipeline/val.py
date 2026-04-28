@@ -13,6 +13,10 @@ class Image_classification_val(PipelineBase):
     on_turn_end : hooks after each training turn, with parameter (batch_id)
 
     mix_precision: Choose from 'no','fp16','bf16' or 'fp8' (achieved via accelerate)
+
+    get_pred: function to get prediction from model output, default is "lambda x: x.argmax(dim=1, keepdim=True)"
+
+    data_hooks: hooks to process datum, with imput parameter (datum), default is "lambda x: x". Data should be moved to corresponding device here
     '''
     def __init__(self,
             batch_size,
